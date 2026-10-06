@@ -1,0 +1,212 @@
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
+  <div>
+    <h2 class="text-lg font-bold text-slate-900 flex items-center">
+      <i class="bi bi-gear-wide-connected mr-2 text-indigo-600"></i> Automatización contable
+    </h2>
+    <p class="text-xs text-slate-500 mt-0.5">Plantillas de asiento, asientos recurrentes y estado de la cola de eventos.</p>
+  </div>
+
+  <div class="flex space-x-1 border-b border-slate-200">
+    @for (t of ['plantillas', 'recurrentes', 'eventos']; track t) {
+      <button (click)="cambiarTab($any(t))"
+        [class.border-indigo-600]="tab() === t" [class.text-indigo-700]="tab() === t"
+        class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-indigo-700 capitalize">
+        {{ t }}
+      </button>
+    }
+  </div>
+
+  @if (error()) {
+    <div class="bg-rose-50 border-l-4 border-rose-500 p-3 text-sm text-rose-700 rounded-r">{{ error() }}</div>
+  }
+  @if (exito()) {
+    <div class="bg-emerald-50 border-l-4 border-emerald-500 p-3 text-sm text-emerald-700 rounded-r">{{ exito() }}</div>
+  }
+
+  <!-- ============ PLANTILLAS ============ -->
+  @if (tab() === 'plantillas') {
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <h3 class="font-semibold text-sm text-slate-800">Plantillas disponibles</h3>
+          @if (auth.puedeCerrarPeriodos()) {
+            <button (click)="mostrarNueva.set(!mostrarNueva())" class="text-xs bg-indigo-700 text-white px-3 py-1 rounded-md hover:bg-indigo-800">
+              {{ mostrarNueva() ? 'Cancelar' : 'Nueva plantilla' }}
+            </button>
+          }
+        </div>
+        @for (p of plantillas(); track p.id_plantilla) {
+          <button (click)="elegirPlantilla(p)"
+            [class.ring-2]="plantillaSel()?.codigo === p.codigo" [class.ring-indigo-500]="plantillaSel()?.codigo === p.codigo"
+            class="w-full text-left border border-slate-200 rounded-lg p-3 hover:bg-slate-50">
+            <div class="flex justify-between text-sm"><span class="font-semibold">{{ p.nombre }}</span><span class="text-xs text-slate-500">{{ p.codigo }}</span></div>
+            <div class="text-xs text-slate-500 mt-1">
+              @for (l of p.lineas; track $index) {
+                <span class="inline-block mr-2">{{ l.lado === 'DEBE' ? 'D' : 'H' }} {{ l.codigo_cuenta }} ← {{ l.variable }}</span>
+              }
+            </div>
+          </button>
+        } @empty {
+          <p class="text-sm text-slate-500">No hay plantillas.</p>
+        }
+      </div>
+
+      <div>
+        @if (mostrarNueva()) {
+          <form (ngSubmit)="guardarPlantilla()" class="space-y-3 border border-slate-200 rounded-lg p-4">
+            <h3 class="font-semibold text-sm text-slate-800">Nueva plantilla</h3>
+            <input name="codigo" [(ngModel)]="nueva.codigo" placeholder="CODIGO_EN_MAYUSCULAS" required class="w-full border rounded-md px-3 py-1.5 text-sm" />
+            <input name="nombre" [(ngModel)]="nueva.nombre" placeholder="Nombre" required class="w-full border rounded-md px-3 py-1.5 text-sm" />
+            <input name="concepto" [(ngModel)]="nueva.concepto_formato" placeholder="Concepto, ej. Factura {{ '{' }}numero{{ '}' }}" required class="w-full border rounded-md px-3 py-1.5 text-sm" />
+            @for (l of nueva.lineas; track $index) {
+              <div class="flex gap-2">
+                <input [name]="'cta' + $index" type="number" [(ngModel)]="l.codigo_cuenta" placeholder="Cuenta" class="w-24 border rounded-md px-2 py-1.5 text-sm" />
+                <select [name]="'lado' + $index" [(ngModel)]="l.lado" class="border rounded-md px-2 py-1.5 text-sm">
+                  <option value="DEBE">Debe</option><option value="HABER">Haber</option>
+                </select>
+                <input [name]="'var' + $index" [(ngModel)]="l.variable" placeholder="variable (total, igv…)" class="flex-1 border rounded-md px-2 py-1.5 text-sm" />
+                <button type="button" (click)="quitarLinea($index)" class="text-rose-500 px-1"><i class="bi bi-x-lg"></i></button>
+              </div>
+            }
+            <div class="flex justify-between">
+              <button type="button" (click)="agregarLinea()" class="text-xs text-indigo-700">+ Agregar línea</button>
+              <button type="submit" class="bg-indigo-700 text-white text-sm px-4 py-1.5 rounded-md hover:bg-indigo-800">Guardar</button>
+            </div>
+          </form>
+        } @else if (plantillaSel(); as p) {
+          <form (ngSubmit)="aplicar()" class="space-y-3 border border-slate-200 rounded-lg p-4">
+            <h3 class="font-semibold text-sm text-slate-800">Aplicar: {{ p.nombre }}</h3>
+            @if (!auth.puedeEscribir()) {
+              <p class="text-xs text-amber-700">Su rol es de solo lectura; no puede generar asientos.</p>
+            }
+            <label class="block text-xs text-slate-600">Fecha contable
+              <input name="fecha" type="date" [(ngModel)]="fechaAplicar" required class="w-full border rounded-md px-3 py-1.5 text-sm" />
+            </label>
+            @for (v of variablesSel(); track v) {
+              <label class="block text-xs text-slate-600">{{ v }} {{ esImporte(p, v) ? '(importe)' : '' }}
+                <input [name]="'v_' + v" [(ngModel)]="valoresAplicar[v]" [type]="esImporte(p, v) ? 'number' : 'text'" step="0.01" required
+                  class="w-full border rounded-md px-3 py-1.5 text-sm" />
+              </label>
+            }
+            <button type="submit" [disabled]="!auth.puedeEscribir()" class="bg-indigo-700 disabled:opacity-40 text-white text-sm px-4 py-1.5 rounded-md hover:bg-indigo-800">Generar asiento</button>
+          </form>
+        } @else {
+          <p class="text-sm text-slate-500">Seleccione una plantilla para generar un asiento.</p>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ============ RECURRENTES ============ -->
+  @if (tab() === 'recurrentes') {
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      @if (auth.puedeCerrarPeriodos()) {
+        <div class="flex items-end gap-2">
+          <label class="text-xs text-slate-600">Fecha de corte
+            <input type="date" [(ngModel)]="fechaCorte" class="block border rounded-md px-3 py-1.5 text-sm" />
+          </label>
+          <button (click)="ejecutar()" class="bg-emerald-700 text-white text-sm px-4 py-1.5 rounded-md hover:bg-emerald-800">Generar pendientes</button>
+        </div>
+        <button (click)="mostrarNuevoRec.set(!mostrarNuevoRec())" class="text-xs bg-indigo-700 text-white px-3 py-1.5 rounded-md hover:bg-indigo-800">
+          {{ mostrarNuevoRec() ? 'Cancelar' : 'Nuevo recurrente' }}
+        </button>
+      }
+    </div>
+
+    @if (mostrarNuevoRec()) {
+      <form (ngSubmit)="guardarRecurrente()" class="grid sm:grid-cols-2 gap-3 border border-slate-200 rounded-lg p-4">
+        <input name="rnombre" [(ngModel)]="nuevoRec.nombre" placeholder="Nombre" required class="border rounded-md px-3 py-1.5 text-sm" />
+        <select name="rplantilla" [(ngModel)]="nuevoRec.codigo_plantilla" required class="border rounded-md px-3 py-1.5 text-sm">
+          <option value="" disabled>Plantilla…</option>
+          @for (p of plantillas(); track p.codigo) { <option [value]="p.codigo">{{ p.nombre }}</option> }
+        </select>
+        <label class="text-xs text-slate-600">Día del mes (1-28)
+          <input name="rdia" type="number" min="1" max="28" [(ngModel)]="nuevoRec.dia_del_mes" required class="block w-full border rounded-md px-3 py-1.5 text-sm" /></label>
+        <label class="text-xs text-slate-600">Desde
+          <input name="rini" type="date" [(ngModel)]="nuevoRec.fecha_inicio" required class="block w-full border rounded-md px-3 py-1.5 text-sm" /></label>
+        <label class="text-xs text-slate-600">Hasta (opcional)
+          <input name="rfin" type="date" [(ngModel)]="nuevoRec.fecha_fin" class="block w-full border rounded-md px-3 py-1.5 text-sm" /></label>
+        @for (v of variablesRec(); track v) {
+          <label class="text-xs text-slate-600">{{ v }}
+            <input [name]="'rv_' + v" [(ngModel)]="nuevoRec.valores[v]" [type]="esImporteRec(v) ? 'number' : 'text'" step="0.01" required
+              class="block w-full border rounded-md px-3 py-1.5 text-sm" /></label>
+        }
+        <div class="sm:col-span-2 text-right"><button type="submit" class="bg-indigo-700 text-white text-sm px-4 py-1.5 rounded-md hover:bg-indigo-800">Guardar</button></div>
+      </form>
+    }
+
+    @if (resultados(); as res) {
+      @if (res.length) {
+        <div class="border border-slate-200 rounded-lg p-3 text-sm space-y-1">
+          <h3 class="font-semibold text-slate-800">Resultado de la ejecución</h3>
+          @for (r of res; track $index) {
+            <div [class.text-emerald-700]="r.ok" [class.text-rose-700]="!r.ok">
+              {{ clasePeriodo(r.periodo) }} · {{ r.nombre }} · {{ r.ok ? 'Asiento N° ' + r.partida : 'Error: ' + r.error }}
+            </div>
+          }
+        </div>
+      }
+    }
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead class="text-left text-xs text-slate-500 border-b">
+          <tr><th class="py-2 pr-4">Nombre</th><th class="pr-4">Plantilla</th><th class="pr-4">Día</th><th class="pr-4">Vigencia</th><th class="pr-4">Último generado</th><th class="pr-4">Estado</th><th></th></tr>
+        </thead>
+        <tbody>
+          @for (r of recurrentes(); track r.id_recurrente) {
+            <tr class="border-b border-slate-100">
+              <td class="py-2 pr-4 font-medium">{{ r.nombre }}</td>
+              <td class="pr-4">{{ r.codigo_plantilla }}</td>
+              <td class="pr-4">{{ r.dia_del_mes }}</td>
+              <td class="pr-4">{{ r.fecha_inicio }} → {{ r.fecha_fin || 'sin fin' }}</td>
+              <td class="pr-4">{{ r.ultimo_periodo ? clasePeriodo(r.ultimo_periodo) : '—' }}</td>
+              <td class="pr-4">{{ r.activo ? 'Activo' : 'Inactivo' }}</td>
+              <td>@if (r.activo && auth.puedeCerrarPeriodos()) { <button (click)="desactivar(r)" class="text-xs text-rose-600 hover:underline">Desactivar</button> }</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="7" class="py-4 text-slate-500">No hay asientos recurrentes.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- ============ EVENTOS ============ -->
+  @if (tab() === 'eventos') {
+    @if (auth.sesion()?.rol !== 'ADMIN') {
+      <p class="text-sm text-amber-700">Solo el rol ADMIN puede ver la cola de eventos.</p>
+    } @else {
+      <div class="flex items-center gap-2">
+        <select [(ngModel)]="estadoFiltro" (ngModelChange)="cargarEventos()" class="border rounded-md px-3 py-1.5 text-sm">
+          <option value="">Todos</option><option value="PENDIENTE">Pendientes</option><option value="ENVIADO">Enviados</option><option value="FALLIDO">Fallidos</option>
+        </select>
+        <button (click)="cargarEventos()" class="text-xs text-indigo-700">Actualizar</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="text-left text-xs text-slate-500 border-b">
+            <tr><th class="py-2 pr-4">#</th><th class="pr-4">Evento</th><th class="pr-4">Estado</th><th class="pr-4">Intentos</th><th class="pr-4">Creado</th><th class="pr-4">Error</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (e of eventos(); track e.id_evento) {
+              <tr class="border-b border-slate-100">
+                <td class="py-2 pr-4">{{ e.id_evento }}</td>
+                <td class="pr-4">{{ e.tipo_evento }}</td>
+                <td class="pr-4">
+                  <span [class.text-emerald-700]="e.estado === 'ENVIADO'" [class.text-amber-700]="e.estado === 'PENDIENTE'" [class.text-rose-700]="e.estado === 'FALLIDO'">{{ e.estado }}</span>
+                </td>
+                <td class="pr-4">{{ e.intentos }}</td>
+                <td class="pr-4">{{ e.fecha_creacion | date: 'short' }}</td>
+                <td class="pr-4 text-xs text-rose-700">{{ e.ultimo_error }}</td>
+                <td>@if (e.estado === 'FALLIDO') { <button (click)="reintentar(e)" class="text-xs text-indigo-700 hover:underline">Reintentar</button> }</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="7" class="py-4 text-slate-500">Sin eventos.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>

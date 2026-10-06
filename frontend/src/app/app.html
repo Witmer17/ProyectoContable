@@ -107,6 +107,15 @@
           <i class="bi bi-file-earmark-bar-graph"></i>
           <span>Reportes & SUNAT PLE</span>
         </button>
+
+        <button
+          (click)="cambiarPestana('automatizacion')"
+          [class.bg-indigo-800]="activeTab() === 'automatizacion'"
+          [class.text-amber-400]="activeTab() === 'automatizacion'"
+          class="px-3 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 hover:text-white transition flex items-center space-x-2 whitespace-nowrap">
+          <i class="bi bi-gear-wide-connected"></i>
+          <span>Automatización</span>
+        </button>
       </nav>
     </div>
   </header>
@@ -744,6 +753,10 @@
           </table>
         </div>
       </div>
+    }
+
+    @if (activeTab() === 'automatizacion') {
+      <app-automatizacion />
     }
 
     <!-- ==================== PESTAÑA: PERÍODOS FISCALES ==================== -->

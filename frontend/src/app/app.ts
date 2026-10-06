@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ContabilidadService } from './services/contabilidad.service';
 import { AuthService } from './services/auth.service';
+import { AutomatizacionComponent } from './automatizacion/automatizacion';
 import {
   AsientoContable,
   CuentaPCGE,
@@ -17,7 +18,7 @@ import {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AutomatizacionComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
@@ -45,7 +46,7 @@ export class App implements OnInit {
   }
 
   // Navegación
-  activeTab = signal<'dashboard' | 'asientos' | 'nuevo' | 'factura' | 'pcge' | 'periodos' | 'reportes'>('dashboard');
+  activeTab = signal<'dashboard' | 'asientos' | 'nuevo' | 'factura' | 'pcge' | 'periodos' | 'reportes' | 'automatizacion'>('dashboard');
 
   // Estados de datos
   kpis = signal<KPIsContables | null>(null);
@@ -169,7 +170,7 @@ export class App implements OnInit {
     });
   }
 
-  cambiarPestana(tab: 'dashboard' | 'asientos' | 'nuevo' | 'factura' | 'pcge' | 'periodos' | 'reportes') {
+  cambiarPestana(tab: 'dashboard' | 'asientos' | 'nuevo' | 'factura' | 'pcge' | 'periodos' | 'reportes' | 'automatizacion') {
     this.activeTab.set(tab);
     this.limpiarMensajes();
     if (tab === 'asientos') {
