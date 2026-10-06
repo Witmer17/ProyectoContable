@@ -1,0 +1,1050 @@
+<div class="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
+  <!-- HEADER & NAVBAR -->
+  <header class="bg-indigo-900 text-white shadow-lg sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center space-x-3">
+          <div class="bg-indigo-700 p-2 rounded-lg flex items-center justify-center shadow-inner">
+            <i class="bi bi-bank2 text-2xl text-amber-400"></i>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold tracking-tight">Sistema Contable Empresarial</h1>
+            <p class="text-xs text-indigo-200">Arquitectura Limpia • Normativa SUNAT (PCGE 2026, PLE & SIRE)</p>
+          </div>
+        </div>
+        <div class="hidden md:flex items-center space-x-2">
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-800 text-emerald-100 border border-emerald-600">
+            <i class="bi bi-shield-check mr-1"></i> Partida Doble Rigurosa
+          </span>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-800 text-indigo-200 border border-indigo-700">
+            <i class="bi bi-clock-history mr-1"></i> Auditoría Inmutable
+          </span>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-800 text-amber-100 border border-amber-600">
+            <i class="bi bi-file-earmark-text mr-1"></i> SUNAT PLE 5.1
+          </span>
+        </div>
+      </div>
+
+      <!-- TABS DE NAVEGACIÓN -->
+      <nav class="flex space-x-1 border-t border-indigo-800/60 pt-1 pb-2 overflow-x-auto">
+        <button
+          (click)="cambiarPestana('dashboard')"
+          [class.bg-indigo-800]="activeTab() === 'dashboard'"
+          [class.text-amber-400]="activeTab() === 'dashboard'"
+          class="px-3 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 hover:text-white transition flex items-center space-x-2 whitespace-nowrap">
+          <i class="bi bi-speedometer2"></i>
+          <span>Dashboard</span>
+        </button>
+
+        <button
+          (click)="cambiarPestana('asientos')"
+          [class.bg-indigo-800]="activeTab() === 'asientos'"
+          [class.text-amber-400]="activeTab() === 'asientos'"
+          class="px-3 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 hover:text-white transition flex items-center space-x-2 whitespace-nowrap">
+          <i class="bi bi-journal-text"></i>
+          <span>Libro Diario</span>
+        </button>
+
+        <button
+          (click)="cambiarPestana('nuevo')"
+          [class.bg-indigo-800]="activeTab() === 'nuevo'"
+          [class.text-amber-400]="activeTab() === 'nuevo'"
+          class="px-3 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 hover:text-white transition flex items-center space-x-2 whitespace-nowrap">
+          <i class="bi bi-plus-circle"></i>
+          <span>Nuevo Asiento</span>
+        </button>
+
+        <button
+          (click)="cambiarPestana('factura')"
+          [class.bg-indigo-800]="activeTab() === 'factura'"
+          [class.text-amber-400]="activeTab() === 'factura'"
+          class="px-3 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 hover:text-white transition flex items-center space-x-2 whitespace-nowrap">
+          <i class="bi bi-receipt"></i>
+          <span>Factura → PCGE</span>
+        </button>
+
+        <button
+          (click)="cambiarPestana('pcge')"
+          [class.bg-indigo-800]="activeTab() === 'pcge'"
+          [class.text-amber-400]="activeTab() === 'pcge'"
+          class="px-3 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 hover:text-white transition flex items-center space-x-2 whitespace-nowrap">
+          <i class="bi bi-diagram-3"></i>
+          <span>Plan PCGE</span>
+        </button>
+
+        <button
+          (click)="cambiarPestana('periodos')"
+          [class.bg-indigo-800]="activeTab() === 'periodos'"
+          [class.text-amber-400]="activeTab() === 'periodos'"
+          class="px-3 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 hover:text-white transition flex items-center space-x-2 whitespace-nowrap">
+          <i class="bi bi-calendar2-week"></i>
+          <span>Períodos Fiscales</span>
+        </button>
+
+        <button
+          (click)="cambiarPestana('reportes')"
+          [class.bg-indigo-800]="activeTab() === 'reportes'"
+          [class.text-amber-400]="activeTab() === 'reportes'"
+          class="px-3 py-2 text-sm font-medium rounded-md hover:bg-indigo-800 hover:text-white transition flex items-center space-x-2 whitespace-nowrap">
+          <i class="bi bi-file-earmark-bar-graph"></i>
+          <span>Reportes & SUNAT PLE</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ALERTAS Y MENSAJES -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full">
+    @if (errorMessage()) {
+      <div class="bg-rose-50 border-l-4 border-rose-500 p-4 rounded-r shadow-sm flex items-start justify-between">
+        <div class="flex items-start">
+          <i class="bi bi-exclamation-triangle-fill text-rose-500 text-xl mr-3"></i>
+          <div>
+            <h4 class="text-sm font-bold text-rose-800">Alerta de Validación</h4>
+            <p class="text-sm text-rose-700 mt-1">{{ errorMessage() }}</p>
+          </div>
+        </div>
+        <button (click)="limpiarMensajes()" class="text-rose-400 hover:text-rose-600">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+    }
+
+    @if (successMessage()) {
+      <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r shadow-sm flex items-start justify-between">
+        <div class="flex items-start">
+          <i class="bi bi-check-circle-fill text-emerald-500 text-xl mr-3"></i>
+          <div>
+            <h4 class="text-sm font-bold text-emerald-800">Operación Exitosa</h4>
+            <p class="text-sm text-emerald-700 mt-1">{{ successMessage() }}</p>
+          </div>
+        </div>
+        <button (click)="limpiarMensajes()" class="text-emerald-400 hover:text-emerald-600">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+    }
+  </div>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+    <!-- ==================== PESTAÑA: DASHBOARD ==================== -->
+    @if (activeTab() === 'dashboard') {
+      <div class="space-y-6">
+        <!-- KPI CARDS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <!-- Card 1 -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Débitos (Debe)</span>
+              <div class="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                <i class="bi bi-arrow-down-left-circle text-lg"></i>
+              </div>
+            </div>
+            <div class="mt-3">
+              <span class="text-2xl font-extrabold text-slate-800">
+                S/ {{ kpis()?.suma_debe_acumulada | number:'1.2-2' }}
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Acumulado en Libro Diario 2026</p>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Créditos (Haber)</span>
+              <div class="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                <i class="bi bi-arrow-up-right-circle text-lg"></i>
+              </div>
+            </div>
+            <div class="mt-3">
+              <span class="text-2xl font-extrabold text-slate-800">
+                S/ {{ kpis()?.suma_haber_acumulada | number:'1.2-2' }}
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Acumulado en Libro Diario 2026</p>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Ecuación Patrimonial</span>
+              <div class="p-2 rounded-lg" [ngClass]="kpis()?.cuadre_perfecto ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'">
+                <i class="bi" [ngClass]="kpis()?.cuadre_perfecto ? 'bi-check2-all' : 'bi-exclamation-triangle'"></i>
+              </div>
+            </div>
+            <div class="mt-3">
+              @if (kpis()?.cuadre_perfecto) {
+                <span class="text-lg font-bold text-emerald-600 flex items-center">
+                  <i class="bi bi-patch-check-fill mr-1.5"></i> Cuadre Perfecto
+                </span>
+                <p class="text-xs text-slate-500 mt-1">Diferencia: S/ 0.00 (Tolerancia &lt; 0.01)</p>
+              } @else {
+                <span class="text-lg font-bold text-rose-600">
+                  Descuadre: S/ {{ kpis()?.diferencia_cuadre | number:'1.2-2' }}
+                </span>
+                <p class="text-xs text-rose-500 mt-1">Requiere asiento de ajuste</p>
+              }
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Períodos Fiscales</span>
+              <div class="p-2 bg-amber-50 text-amber-600 rounded-lg">
+                <i class="bi bi-calendar-check text-lg"></i>
+              </div>
+            </div>
+            <div class="mt-3 flex items-baseline space-x-2">
+              <span class="text-2xl font-extrabold text-slate-800">{{ kpis()?.periodos_abiertos }}</span>
+              <span class="text-xs text-slate-500 font-medium">Abiertos / {{ kpis()?.periodos_cerrados }} Cerrados</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Bloqueo pesimista habilitado</p>
+          </div>
+        </div>
+
+        <!-- SECCIÓN DE ACCIONES RÁPIDAS Y ESTADOS -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Columna 1 y 2: Resumen del Sistema Contable -->
+          <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h3 class="text-base font-bold text-slate-800 flex items-center">
+              <i class="bi bi-cpu mr-2 text-indigo-600"></i>
+              Arquitectura y Normativa Implementada
+            </h3>
+            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="border border-slate-100 bg-slate-50 p-4 rounded-lg">
+                <h4 class="text-xs font-bold text-indigo-900 uppercase">Partida Doble & Balanceo</h4>
+                <p class="text-xs text-slate-600 mt-1">
+                  Validador automático con tolerancia matemática de S/ 0.01 y verificación de apuntes simultáneos.
+                </p>
+              </div>
+              <div class="border border-slate-100 bg-slate-50 p-4 rounded-lg">
+                <h4 class="text-xs font-bold text-indigo-900 uppercase">Trazabilidad & Auditoría (4.1.3)</h4>
+                <p class="text-xs text-slate-600 mt-1">
+                  Prohibición de enmiendas conforme a SUNAT: rectificación formal mediante anulación de asiento y emisión de reemplazo.
+                </p>
+              </div>
+              <div class="border border-slate-100 bg-slate-50 p-4 rounded-lg">
+                <h4 class="text-xs font-bold text-indigo-900 uppercase">Control de Concurrencia</h4>
+                <p class="text-xs text-slate-600 mt-1">
+                  Bloqueo pesimista por ejercicio/mes (<code class="bg-slate-200 px-1 py-0.5 rounded text-[11px]">FOR UPDATE</code>) y versionamiento optimista.
+                </p>
+              </div>
+              <div class="border border-slate-100 bg-slate-50 p-4 rounded-lg">
+                <h4 class="text-xs font-bold text-indigo-900 uppercase">SUNAT PLE 5.1 & SIRE</h4>
+                <p class="text-xs text-slate-600 mt-1">
+                  Generación en tiempo real del archivo plano oficial delimitado por pipes (<code class="bg-slate-200 px-1 py-0.5 rounded text-[11px]">|</code>) con CUO normalizado.
+                </p>
+              </div>
+            </div>
+
+            <!-- Accesos rápidos -->
+            <div class="mt-6 pt-5 border-t border-slate-100 flex flex-wrap gap-3">
+              <button (click)="cambiarPestana('nuevo')" class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm transition">
+                <i class="bi bi-plus-lg mr-1.5"></i> Crear Nuevo Asiento
+              </button>
+              <button (click)="cambiarPestana('factura')" class="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg shadow-sm transition">
+                <i class="bi bi-lightning-charge mr-1.5"></i> Simular Factura → PCGE
+              </button>
+              <button (click)="descargarPLE()" class="inline-flex items-center px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-sm transition">
+                <i class="bi bi-download mr-1.5"></i> Exportar PLE Diario (TXT)
+              </button>
+            </div>
+          </div>
+
+          <!-- Columna 3: Estado de Asientos -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h3 class="text-base font-bold text-slate-800 flex items-center">
+              <i class="bi bi-pie-chart mr-2 text-indigo-600"></i>
+              Estado de los Asientos
+            </h3>
+            <div class="mt-5 space-y-4">
+              <div>
+                <div class="flex justify-between text-xs font-medium text-slate-600 mb-1">
+                  <span>Asientos Validados / Activos</span>
+                  <span class="font-bold text-emerald-600">{{ kpis()?.asientos_validados }}</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2">
+                  <div class="bg-emerald-500 h-2 rounded-full" style="width: 85%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs font-medium text-slate-600 mb-1">
+                  <span>Asientos Rectificados</span>
+                  <span class="font-bold text-blue-600">{{ kpis()?.asientos_rectificados }}</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2">
+                  <div class="bg-blue-500 h-2 rounded-full" style="width: 15%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs font-medium text-slate-600 mb-1">
+                  <span>Asientos Anulados (Histórico)</span>
+                  <span class="font-bold text-rose-600">{{ kpis()?.asientos_anulados }}</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2">
+                  <div class="bg-rose-400 h-2 rounded-full" style="width: 10%"></div>
+                </div>
+              </div>
+
+              <div class="pt-4 border-t border-slate-100 text-xs text-slate-500">
+                <p><i class="bi bi-info-circle mr-1 text-slate-400"></i> Total de cuentas en catálogo PCGE: <strong>{{ kpis()?.total_cuentas_pcge }}</strong> cuentas oficiales.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ==================== PESTAÑA: LIBRO DIARIO ==================== -->
+    @if (activeTab() === 'asientos') {
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center">
+              <i class="bi bi-journal-bookmark mr-2 text-indigo-600"></i>
+              Libro Diario (Registro Cronológico)
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">Asientos contables ordenados por Código Único de Operación (CUO / Partida)</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button (click)="cargarAsientos()" class="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded-lg transition flex items-center">
+              <i class="bi bi-arrow-clockwise mr-1"></i> Actualizar
+            </button>
+            <button (click)="cambiarPestana('nuevo')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center">
+              <i class="bi bi-plus-lg mr-1"></i> Nuevo Asiento
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider">
+              <tr>
+                <th class="py-3 px-4">Partida (CUO)</th>
+                <th class="py-3 px-4">Fecha</th>
+                <th class="py-3 px-4">Concepto / Glosa</th>
+                <th class="py-3 px-4">Tipo</th>
+                <th class="py-3 px-4 text-right">Debe Total</th>
+                <th class="py-3 px-4 text-right">Haber Total</th>
+                <th class="py-3 px-4 text-center">Estado</th>
+                <th class="py-3 px-4 text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-700">
+              @for (a of asientos(); track a.partida) {
+                <tr class="hover:bg-indigo-50/40 transition">
+                  <td class="py-3 px-4 font-mono font-bold text-indigo-900">
+                    #{{ a.partida }}
+                  </td>
+                  <td class="py-3 px-4 whitespace-nowrap">{{ a.fecha }}</td>
+                  <td class="py-3 px-4 max-w-xs truncate" [title]="a.concepto">
+                    <span class="font-medium text-slate-900">{{ a.concepto }}</span>
+                    @if (a.observaciones) {
+                      <span class="block text-[11px] text-slate-400 truncate">{{ a.observaciones }}</span>
+                    }
+                  </td>
+                  <td class="py-3 px-4 whitespace-nowrap">
+                    <span class="inline-flex px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700">
+                      {{ a.tipo_asiento }}
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 font-mono font-semibold text-right text-slate-900 whitespace-nowrap">
+                    S/ {{ a.debe_total | number:'1.2-2' }}
+                  </td>
+                  <td class="py-3 px-4 font-mono font-semibold text-right text-slate-900 whitespace-nowrap">
+                    S/ {{ a.haber_total | number:'1.2-2' }}
+                  </td>
+                  <td class="py-3 px-4 text-center whitespace-nowrap">
+                    @if (a.estado === 'VALIDADO' || a.estado === 'REGISTRADO') {
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+                        <i class="bi bi-check-circle-fill mr-1 text-[10px]"></i> VALIDADO
+                      </span>
+                    } @else if (a.estado === 'RECTIFICADO') {
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-800">
+                        <i class="bi bi-arrow-repeat mr-1 text-[10px]"></i> RECTIFICADO
+                      </span>
+                    } @else if (a.estado === 'ANULADO') {
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-100 text-rose-800">
+                        <i class="bi bi-x-circle-fill mr-1 text-[10px]"></i> ANULADO
+                      </span>
+                    }
+                  </td>
+                  <td class="py-3 px-4 text-center whitespace-nowrap">
+                    <div class="inline-flex rounded-md shadow-xs space-x-1">
+                      <button (click)="abrirDetalle(a)" class="px-2.5 py-1 text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-medium transition" title="Ver detalles y auditoría">
+                        <i class="bi bi-eye mr-1"></i> Detalle
+                      </button>
+                      @if (a.estado !== 'ANULADO') {
+                        <button (click)="iniciarRectificacion(a)" class="px-2.5 py-1 text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded font-medium transition" title="Rectificar asiento (No borrar)">
+                          <i class="bi bi-pencil-square mr-1"></i> Rectificar
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="8" class="text-center py-10 text-slate-400">
+                    <i class="bi bi-inbox text-3xl block mb-2"></i>
+                    No se han registrado asientos en el Libro Diario.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- ==================== PESTAÑA: NUEVO ASIENTO ==================== -->
+    @if (activeTab() === 'nuevo') {
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-slate-100 gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center">
+              <i class="bi bi-pencil-square mr-2 text-indigo-600"></i>
+              Registro de Asiento en Libro Diario
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">Validación estricta de partida doble con motor PCGE 2026</p>
+          </div>
+
+          <!-- MONITOR EN VIVO DE PARTIDA DOBLE -->
+          <div class="flex items-center space-x-3 bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl shadow-xs">
+            <div class="text-right">
+              <div class="text-[11px] text-slate-500 font-medium">Debe: <span class="font-mono font-bold text-slate-800">S/ {{ totalDebeNuevo() | number:'1.2-2' }}</span></div>
+              <div class="text-[11px] text-slate-500 font-medium">Haber: <span class="font-mono font-bold text-slate-800">S/ {{ totalHaberNuevo() | number:'1.2-2' }}</span></div>
+            </div>
+            <div class="h-8 w-px bg-slate-300"></div>
+            <div>
+              @if (partidaDobleValida()) {
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                  <i class="bi bi-check-circle-fill mr-1"></i> BALANCEADO
+                </span>
+              } @else {
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800">
+                  <i class="bi bi-exclamation-triangle-fill mr-1"></i> DESCUADRE (S/ {{ diferenciaPartidaDoble() | number:'1.2-2' }})
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- DATOS DE CABECERA -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Fecha Contable</label>
+            <input type="date" [(ngModel)]="nuevoAsiento().fecha" class="w-full text-xs rounded-lg border-slate-300 shadow-xs focus:border-indigo-500 focus:ring-indigo-500 p-2.5 border" />
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Concepto / Glosa de la Operación</label>
+            <input type="text" [(ngModel)]="nuevoAsiento().concepto" placeholder="Ej. Pago de factura comercial con abono en cta cte..." class="w-full text-xs rounded-lg border-slate-300 shadow-xs focus:border-indigo-500 focus:ring-indigo-500 p-2.5 border" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Tipo de Asiento</label>
+            <select [(ngModel)]="nuevoAsiento().tipo_asiento" class="w-full text-xs rounded-lg border-slate-300 shadow-xs focus:border-indigo-500 focus:ring-indigo-500 p-2.5 border bg-white">
+              <option value="OPERATIVO">OPERATIVO</option>
+              <option value="APERTURA">APERTURA</option>
+              <option value="AJUSTE">AJUSTE</option>
+              <option value="REGULARIZACION">REGULARIZACION</option>
+              <option value="CIERRE">CIERRE</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- TABLA DINÁMICA DE LÍNEAS DE APUNTE (MAYOR) -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center">
+              <i class="bi bi-list-check mr-1.5 text-indigo-600"></i>
+              Detalle de Apuntes (Cuentas PCGE)
+            </h3>
+            <button (click)="agregarLineaNuevoAsiento()" class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center">
+              <i class="bi bi-plus-circle mr-1"></i> Agregar Línea
+            </button>
+          </div>
+
+          <div class="border border-slate-200 rounded-xl overflow-hidden">
+            <table class="min-w-full divide-y divide-slate-200 text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-semibold">
+                <tr>
+                  <th class="py-2.5 px-3 w-12 text-center">N°</th>
+                  <th class="py-2.5 px-3 w-1/3">Cuenta Contable (PCGE)</th>
+                  <th class="py-2.5 px-3 w-32 text-right">Debe (S/)</th>
+                  <th class="py-2.5 px-3 w-32 text-right">Haber (S/)</th>
+                  <th class="py-2.5 px-3">Observaciones de Línea</th>
+                  <th class="py-2.5 px-3 w-12 text-center"></th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 bg-white">
+                @for (d of nuevoAsiento().detalles; track $index; let idx = $index) {
+                  <tr>
+                    <td class="py-2 px-3 text-center font-mono text-slate-400 font-bold">{{ idx + 1 }}</td>
+                    <td class="py-2 px-3">
+                      <select [(ngModel)]="d.codigo_cuenta" class="w-full text-xs rounded border-slate-300 p-1.5 border bg-white focus:border-indigo-500">
+                        @for (c of cuentas(); track c.codigo) {
+                          <option [value]="c.codigo">{{ c.codigo }} - {{ c.nombre }}</option>
+                        }
+                      </select>
+                    </td>
+                    <td class="py-2 px-3 text-right">
+                      <input type="number" step="0.01" min="0" [(ngModel)]="d.debe" class="w-full font-mono text-right text-xs rounded border-slate-300 p-1.5 border focus:border-indigo-500" />
+                    </td>
+                    <td class="py-2 px-3 text-right">
+                      <input type="number" step="0.01" min="0" [(ngModel)]="d.haber" class="w-full font-mono text-right text-xs rounded border-slate-300 p-1.5 border focus:border-indigo-500" />
+                    </td>
+                    <td class="py-2 px-3">
+                      <input type="text" [(ngModel)]="d.observaciones" placeholder="Glosa de línea..." class="w-full text-xs rounded border-slate-300 p-1.5 border focus:border-indigo-500" />
+                    </td>
+                    <td class="py-2 px-3 text-center">
+                      <button (click)="eliminarLineaNuevoAsiento(idx)" class="text-rose-500 hover:text-rose-700" title="Eliminar línea">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot class="bg-slate-50 font-semibold text-slate-800 border-t border-slate-200">
+                <tr>
+                  <td colspan="2" class="py-2.5 px-4 text-right">TOTALES:</td>
+                  <td class="py-2.5 px-3 text-right font-mono font-bold text-indigo-900">
+                    S/ {{ totalDebeNuevo() | number:'1.2-2' }}
+                  </td>
+                  <td class="py-2.5 px-3 text-right font-mono font-bold text-indigo-900">
+                    S/ {{ totalHaberNuevo() | number:'1.2-2' }}
+                  </td>
+                  <td colspan="2" class="py-2.5 px-3 text-right">
+                    @if (partidaDobleValida()) {
+                      <span class="text-emerald-600 font-bold"><i class="bi bi-check-circle mr-1"></i> Cuadre verificado</span>
+                    } @else {
+                      <span class="text-rose-600 font-bold"><i class="bi bi-exclamation-circle mr-1"></i> Desbalance</span>
+                    }
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- BOTÓN DE ENVÍO -->
+        <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
+          <button (click)="cambiarPestana('asientos')" class="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg transition">
+            Cancelar
+          </button>
+          <button
+            (click)="guardarNuevoAsiento()"
+            [disabled]="!partidaDobleValida() || loading()"
+            class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center">
+            @if (loading()) {
+              <i class="bi bi-arrow-repeat animate-spin mr-2"></i> Procesando...
+            } @else {
+              <i class="bi bi-save mr-2"></i> Registrar y Validar en Libro Diario
+            }
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- ==================== PESTAÑA: FACTURA -> PCGE ==================== -->
+    @if (activeTab() === 'factura') {
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Formulario de Emisión de Factura Comercial -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-5">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center">
+              <i class="bi bi-receipt-cutoff mr-2 text-amber-600"></i>
+              Emisión de Factura Comercial (Caso End-to-End)
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">Capítulo 5 del PDF: Captura de comprobante y mapeo automático al PCGE</p>
+          </div>
+
+          <div class="space-y-3.5">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Número de Factura Electrónica</label>
+              <input type="text" [(ngModel)]="facturaForm().numero_factura" class="w-full text-xs rounded-lg border-slate-300 p-2.5 border" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Fecha de Emisión</label>
+                <input type="date" [(ngModel)]="facturaForm().fecha" class="w-full text-xs rounded-lg border-slate-300 p-2.5 border" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">RUC del Cliente</label>
+                <input type="text" [(ngModel)]="facturaForm().cliente_ruc" class="w-full text-xs rounded-lg border-slate-300 p-2.5 border" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Total de la Venta (S/)</label>
+              <input
+                type="number"
+                step="0.01"
+                [ngModel]="facturaForm().total_venta"
+                (ngModelChange)="calcularFacturaValores($event)"
+                class="w-full font-mono text-base font-bold text-indigo-900 rounded-lg border-slate-300 p-2.5 border" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+              <div>
+                <span class="text-[11px] text-slate-500 font-semibold block">Base Imponible (70121):</span>
+                <span class="font-mono font-bold text-slate-800 text-sm">S/ {{ facturaForm().base_imponible | number:'1.2-2' }}</span>
+              </div>
+              <div>
+                <span class="text-[11px] text-slate-500 font-semibold block">IGV 18% (40111):</span>
+                <span class="font-mono font-bold text-slate-800 text-sm">S/ {{ facturaForm().igv | number:'1.2-2' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            (click)="contabilizarFactura()"
+            [disabled]="loading()"
+            class="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center justify-center">
+            <i class="bi bi-send-check mr-2"></i> Contabilizar Automáticamente & Notificar SIRE
+          </button>
+        </div>
+
+        <!-- Esquema visual del Mapeo Contable Generado -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
+          <div>
+            <h3 class="text-base font-bold text-slate-900 flex items-center">
+              <i class="bi bi-diagram-2 mr-2 text-indigo-600"></i>
+              Mapeo Automático al Plan Contable (PCGE)
+            </h3>
+            <p class="text-xs text-slate-500 mt-1">
+              El motor de reglas contables aplica automáticamente la imputación tributaria y de partida doble:
+            </p>
+
+            <div class="mt-5 space-y-3">
+              <!-- Debe 1212 -->
+              <div class="p-3.5 border border-blue-200 bg-blue-50/60 rounded-xl flex items-center justify-between">
+                <div>
+                  <span class="inline-block px-2 py-0.5 bg-blue-700 text-white rounded text-[10px] font-bold">DEBE</span>
+                  <span class="ml-2 font-mono font-bold text-slate-800 text-xs">1212 - Emitidas en Cartera</span>
+                  <p class="text-[11px] text-slate-500 mt-0.5">Derecho de cobro exigible al cliente por el valor total</p>
+                </div>
+                <div class="text-right font-mono font-extrabold text-blue-900 text-sm">
+                  S/ {{ facturaForm().total_venta | number:'1.2-2' }}
+                </div>
+              </div>
+
+              <!-- Haber 40111 -->
+              <div class="p-3.5 border border-purple-200 bg-purple-50/60 rounded-xl flex items-center justify-between">
+                <div>
+                  <span class="inline-block px-2 py-0.5 bg-purple-700 text-white rounded text-[10px] font-bold">HABER</span>
+                  <span class="ml-2 font-mono font-bold text-slate-800 text-xs">40111 - IGV Cuenta Propia</span>
+                  <p class="text-[11px] text-slate-500 mt-0.5">Pasivo tributario fiscal frente a SUNAT (Débito fiscal)</p>
+                </div>
+                <div class="text-right font-mono font-extrabold text-purple-900 text-sm">
+                  S/ {{ facturaForm().igv | number:'1.2-2' }}
+                </div>
+              </div>
+
+              <!-- Haber 70121 -->
+              <div class="p-3.5 border border-emerald-200 bg-emerald-50/60 rounded-xl flex items-center justify-between">
+                <div>
+                  <span class="inline-block px-2 py-0.5 bg-emerald-700 text-white rounded text-[10px] font-bold">HABER</span>
+                  <span class="ml-2 font-mono font-bold text-slate-800 text-xs">70121 - Mercaderías Venta Local</span>
+                  <p class="text-[11px] text-slate-500 mt-0.5">Ingreso del ejercicio económico devengado</p>
+                </div>
+                <div class="text-right font-mono font-extrabold text-emerald-900 text-sm">
+                  S/ {{ facturaForm().base_imponible | number:'1.2-2' }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 flex items-center">
+            <i class="bi bi-shield-lock-fill text-lg mr-2 text-amber-600"></i>
+            <span>Transacción atómica garantizada con auditoría completa en <code class="bg-amber-100 px-1 rounded">auditoria_asiento</code>.</span>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ==================== PESTAÑA: PLAN PCGE ==================== -->
+    @if (activeTab() === 'pcge') {
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center">
+              <i class="bi bi-diagram-3 mr-2 text-indigo-600"></i>
+              Plan Contable General Empresarial (PCGE Oficial)
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">Estructura jerárquica con saldos de mayor en tiempo real</p>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <input
+              type="text"
+              [(ngModel)]="filtroPCGE"
+              placeholder="Buscar por código o nombre..."
+              class="text-xs rounded-lg border-slate-300 p-2 border focus:border-indigo-500 w-64" />
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider">
+              <tr>
+                <th class="py-3 px-4">Código</th>
+                <th class="py-3 px-4">Nombre de la Cuenta</th>
+                <th class="py-3 px-4">Nivel</th>
+                <th class="py-3 px-4">Descripción</th>
+                <th class="py-3 px-4 text-right">Saldo Mayor (S/)</th>
+                <th class="py-3 px-4 text-center">Estado</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-700">
+              @for (c of cuentasFiltradas(); track c.codigo) {
+                <tr class="hover:bg-slate-50/60 transition">
+                  <td class="py-3 px-4 font-mono font-bold text-indigo-900">{{ c.codigo }}</td>
+                  <td class="py-3 px-4 font-semibold text-slate-800">{{ c.nombre }}</td>
+                  <td class="py-3 px-4">
+                    <span class="inline-flex px-2 py-0.5 rounded text-[11px] bg-slate-100 font-medium text-slate-600">
+                      Nivel {{ c.codigo_nivel }}
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-slate-500 max-w-xs truncate">{{ c.descripcion || '-' }}</td>
+                  <td class="py-3 px-4 font-mono font-bold text-right text-slate-900">
+                    S/ {{ c.saldo_mayor | number:'1.2-2' }}
+                  </td>
+                  <td class="py-3 px-4 text-center">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                      ACTIVO
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- ==================== PESTAÑA: PERÍODOS FISCALES ==================== -->
+    @if (activeTab() === 'periodos') {
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900 flex items-center">
+            <i class="bi bi-calendar2-range mr-2 text-indigo-600"></i>
+            Control de Bloqueo de Períodos Fiscales (Ejercicio 2026)
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">
+            Mecanismo de seguridad de concurrencia: Los períodos cerrados (Provisional o Definitivo) rechazan cualquier asiento contable
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          @for (p of periodos(); track p.mes) {
+            <div class="border rounded-xl p-4 shadow-xs transition" [ngClass]="p.estado_bloqueo === 'ABIERTO' ? 'border-emerald-200 bg-emerald-50/20' : (p.estado_bloqueo === 'PROVISIONAL' ? 'border-amber-200 bg-amber-50/20' : 'border-rose-200 bg-rose-50/20')">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-sm text-slate-800">Mes {{ p.mes | number:'2.0-0' }} / 2026</span>
+                <span
+                  class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+                  [ngClass]="p.estado_bloqueo === 'ABIERTO' ? 'bg-emerald-100 text-emerald-800' : (p.estado_bloqueo === 'PROVISIONAL' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800')">
+                  {{ p.estado_bloqueo }}
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-500 mt-2">
+                {{ p.razon_bloqueo || 'Período regular' }}
+              </p>
+
+              <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between space-x-1">
+                <button
+                  (click)="cambiarEstadoPeriodo(p.mes, 'ABIERTO')"
+                  [disabled]="p.estado_bloqueo === 'ABIERTO'"
+                  class="px-2 py-1 text-[10px] rounded font-bold bg-white border border-slate-300 hover:bg-slate-50 disabled:opacity-40 transition">
+                  Abrir
+                </button>
+                <button
+                  (click)="cambiarEstadoPeriodo(p.mes, 'PROVISIONAL')"
+                  [disabled]="p.estado_bloqueo === 'PROVISIONAL'"
+                  class="px-2 py-1 text-[10px] rounded font-bold bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100 disabled:opacity-40 transition">
+                  Provisional
+                </button>
+                <button
+                  (click)="cambiarEstadoPeriodo(p.mes, 'DEFINITIVO')"
+                  [disabled]="p.estado_bloqueo === 'DEFINITIVO'"
+                  class="px-2 py-1 text-[10px] rounded font-bold bg-rose-50 border border-rose-200 text-rose-800 hover:bg-rose-100 disabled:opacity-40 transition">
+                  Definitivo
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- ==================== PESTAÑA: REPORTES & SUNAT PLE ==================== -->
+    @if (activeTab() === 'reportes') {
+      <div class="space-y-6">
+        <!-- Tarjeta de Descarga PLE -->
+        <div class="bg-gradient-to-r from-slate-900 to-indigo-900 rounded-xl shadow-md p-6 text-white flex flex-col md:flex-row items-center justify-between gap-4">
+          <div>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-400 text-slate-900 mb-2">
+              <i class="bi bi-file-earmark-code mr-1"></i> Resolución N.º 234-2006/SUNAT
+            </span>
+            <h3 class="text-xl font-bold tracking-tight">Exportación de Libros Electrónicos PLE 5.1</h3>
+            <p class="text-xs text-indigo-200 mt-1 max-w-2xl">
+              Genera el archivo TXT estructurado del Libro Diario con Código Único de Operación (CUO), glosa, correlativos y delimitador oficial para validación directa en el software PLE de SUNAT.
+            </p>
+          </div>
+          <button
+            (click)="descargarPLE()"
+            class="px-5 py-3 bg-amber-400 hover:bg-amber-500 text-slate-900 text-xs font-extrabold rounded-xl shadow-lg transition flex items-center whitespace-nowrap">
+            <i class="bi bi-cloud-arrow-down-fill text-lg mr-2"></i> Descargar PLE 5.1 (TXT)
+          </button>
+        </div>
+
+        <!-- Balance de Comprobación -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="p-5 border-b border-slate-100">
+            <h3 class="text-base font-bold text-slate-900 flex items-center">
+              <i class="bi bi-table mr-2 text-indigo-600"></i>
+              Balance de Comprobación (Sumas del Mayor y Saldos)
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">Verificación de cuadre de la ecuación contable general</p>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider">
+                <tr>
+                  <th class="py-3 px-4">Cuenta</th>
+                  <th class="py-3 px-4">Denominación</th>
+                  <th class="py-3 px-4 text-right">Suma Debe</th>
+                  <th class="py-3 px-4 text-right">Suma Haber</th>
+                  <th class="py-3 px-4 text-right">Saldo Deudor</th>
+                  <th class="py-3 px-4 text-right">Saldo Acreedor</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-slate-700">
+                @for (b of balanceComprobacion(); track b.codigo_cuenta) {
+                  <tr class="hover:bg-slate-50/50">
+                    <td class="py-2.5 px-4 font-mono font-bold text-indigo-900">{{ b.codigo_cuenta }}</td>
+                    <td class="py-2.5 px-4 font-medium text-slate-800">{{ b.nombre_cuenta }}</td>
+                    <td class="py-2.5 px-4 font-mono text-right text-slate-900">S/ {{ b.suma_debe | number:'1.2-2' }}</td>
+                    <td class="py-2.5 px-4 font-mono text-right text-slate-900">S/ {{ b.suma_haber | number:'1.2-2' }}</td>
+                    <td class="py-2.5 px-4 font-mono font-bold text-right text-emerald-700">
+                      {{ b.saldo_deudor > 0 ? ('S/ ' + (b.saldo_deudor | number:'1.2-2')) : '-' }}
+                    </td>
+                    <td class="py-2.5 px-4 font-mono font-bold text-right text-blue-700">
+                      {{ b.saldo_acreedor > 0 ? ('S/ ' + (b.saldo_acreedor | number:'1.2-2')) : '-' }}
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="6" class="text-center py-8 text-slate-400">
+                      No hay movimientos registrados para el balance.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    }
+  </main>
+
+  <!-- ==================== MODAL: DETALLE DEL ASIENTO ==================== -->
+  @if (mostrarModalDetalle() && asientoSeleccionado()) {
+    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-bold text-slate-900 flex items-center">
+              <i class="bi bi-file-earmark-text mr-2 text-indigo-600"></i>
+              Detalle del Asiento N° {{ asientoSeleccionado()?.partida }}
+            </h3>
+            <span class="text-xs text-slate-500 font-mono">CUO: CUO{{ asientoSeleccionado()?.partida | number:'8.0-0' }} • Estado: {{ asientoSeleccionado()?.estado }}</span>
+          </div>
+          <button (click)="cerrarModalDetalle()" class="text-slate-400 hover:text-slate-600">
+            <i class="bi bi-x-lg text-lg"></i>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-5">
+          <!-- Cabecera -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs">
+            <div>
+              <span class="text-slate-400 font-medium block">Fecha:</span>
+              <span class="font-bold text-slate-800">{{ asientoSeleccionado()?.fecha }}</span>
+            </div>
+            <div>
+              <span class="text-slate-400 font-medium block">Tipo Asiento:</span>
+              <span class="font-bold text-slate-800">{{ asientoSeleccionado()?.tipo_asiento }}</span>
+            </div>
+            <div>
+              <span class="text-slate-400 font-medium block">Debe Total:</span>
+              <span class="font-mono font-bold text-indigo-900">S/ {{ asientoSeleccionado()?.debe_total | number:'1.2-2' }}</span>
+            </div>
+            <div>
+              <span class="text-slate-400 font-medium block">Haber Total:</span>
+              <span class="font-mono font-bold text-indigo-900">S/ {{ asientoSeleccionado()?.haber_total | number:'1.2-2' }}</span>
+            </div>
+            <div class="col-span-2 sm:col-span-4">
+              <span class="text-slate-400 font-medium block">Concepto / Glosa:</span>
+              <span class="font-medium text-slate-800">{{ asientoSeleccionado()?.concepto }}</span>
+            </div>
+          </div>
+
+          <!-- Apuntes del asiento -->
+          <div>
+            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Apuntes del Mayor</h4>
+            <div class="border border-slate-200 rounded-xl overflow-hidden">
+              <table class="min-w-full divide-y divide-slate-100 text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-semibold">
+                  <tr>
+                    <th class="py-2.5 px-3">Cuenta</th>
+                    <th class="py-2.5 px-3">Denominación</th>
+                    <th class="py-2.5 px-3 text-right">Debe</th>
+                    <th class="py-2.5 px-3 text-right">Haber</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  @for (d of asientoSeleccionado()?.detalles; track d.linea_numero) {
+                    <tr>
+                      <td class="py-2.5 px-3 font-mono font-bold text-indigo-900">{{ d.codigo_cuenta }}</td>
+                      <td class="py-2.5 px-3 font-medium text-slate-800">{{ d.nombre_cuenta || getNombreCuenta(d.codigo_cuenta) }}</td>
+                      <td class="py-2.5 px-3 font-mono text-right text-slate-900">S/ {{ d.debe | number:'1.2-2' }}</td>
+                      <td class="py-2.5 px-3 font-mono text-right text-slate-900">S/ {{ d.haber | number:'1.2-2' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Historial de Auditoría (Trazabilidad) -->
+          <div>
+            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2 flex items-center">
+              <i class="bi bi-clock-history mr-1.5 text-indigo-600"></i>
+              Historial de Auditoría Inmutable (Capítulo 2.2.3)
+            </h4>
+            <div class="space-y-2">
+              @for (h of asientoSeleccionado()?.historial_cambios; track $index) {
+                <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg text-xs flex items-center justify-between">
+                  <div>
+                    <span class="font-bold text-slate-800">{{ h.usuario }}</span>
+                    <span class="text-slate-500 ml-2">{{ h.cambio }}</span>
+                    @if (h.razon) {
+                      <p class="text-[11px] text-amber-700 mt-0.5"><i class="bi bi-chat-quote mr-1"></i> Razón: {{ h.razon }}</p>
+                    }
+                  </div>
+                  <span class="text-[11px] text-slate-400 font-mono">{{ h.fecha_cambio | date:'short' }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 border-t border-slate-100 flex items-center justify-between">
+          <button (click)="cerrarModalDetalle()" class="px-4 py-2 border border-slate-300 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-50 transition">
+            Cerrar
+          </button>
+          @if (asientoSeleccionado()?.estado !== 'ANULADO') {
+            <button (click)="iniciarRectificacion(asientoSeleccionado()!)" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center">
+              <i class="bi bi-pencil-square mr-1.5"></i> Rectificar Asiento (No Borrar)
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ==================== MODAL: RECTIFICACIÓN CONTABLE ==================== -->
+  @if (mostrarModalRectificar() && asientoSeleccionado()) {
+    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-bold text-slate-900 flex items-center">
+              <i class="bi bi-pencil-square mr-2 text-amber-600"></i>
+              Rectificación Formal de Asiento N° {{ asientoSeleccionado()?.partida }}
+            </h3>
+            <p class="text-xs text-slate-500">
+              Conforme a la normativa SUNAT, el asiento original pasará a estado ANULADO y se creará un nuevo asiento rectificatorio con auditoría completa.
+            </p>
+          </div>
+          <button (click)="cerrarModalRectificar()" class="text-slate-400 hover:text-slate-600">
+            <i class="bi bi-x-lg text-lg"></i>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Motivo / Justificación Técnica de la Rectificación *</label>
+            <textarea
+              [(ngModel)]="razonRectificacion"
+              rows="2"
+              placeholder="Ej. Error en cuenta de imputación, debe imputarse a la divisionaria 1213..."
+              class="w-full text-xs rounded-lg border-slate-300 p-2.5 border focus:border-amber-500 focus:ring-amber-500"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Concepto del Asiento Rectificado</label>
+            <input type="text" [(ngModel)]="conceptoRectificacion" class="w-full text-xs rounded-lg border-slate-300 p-2.5 border" />
+          </div>
+
+          <div>
+            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Nuevos Apuntes Corregidos</h4>
+            <div class="border border-slate-200 rounded-xl overflow-hidden">
+              <table class="min-w-full divide-y divide-slate-100 text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-semibold">
+                  <tr>
+                    <th class="py-2.5 px-3">Cuenta (PCGE)</th>
+                    <th class="py-2.5 px-3 text-right">Debe (S/)</th>
+                    <th class="py-2.5 px-3 text-right">Haber (S/)</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  @for (d of detallesRectificacion(); track $index) {
+                    <tr>
+                      <td class="py-2 px-3">
+                        <select [(ngModel)]="d.codigo_cuenta" class="w-full text-xs rounded border-slate-300 p-1.5 border bg-white">
+                          @for (c of cuentas(); track c.codigo) {
+                            <option [value]="c.codigo">{{ c.codigo }} - {{ c.nombre }}</option>
+                          }
+                        </select>
+                      </td>
+                      <td class="py-2 px-3 text-right">
+                        <input type="number" step="0.01" min="0" [(ngModel)]="d.debe" class="w-full font-mono text-right text-xs rounded border-slate-300 p-1.5 border" />
+                      </td>
+                      <td class="py-2 px-3 text-right">
+                        <input type="number" step="0.01" min="0" [(ngModel)]="d.haber" class="w-full font-mono text-right text-xs rounded border-slate-300 p-1.5 border" />
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 border-t border-slate-100 flex items-center justify-end space-x-3">
+          <button (click)="cerrarModalRectificar()" class="px-4 py-2 border border-slate-300 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-50 transition">
+            Cancelar
+          </button>
+          <button
+            (click)="guardarRectificacion()"
+            [disabled]="loading() || !razonRectificacion().trim()"
+            class="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center">
+            @if (loading()) {
+              <i class="bi bi-arrow-repeat animate-spin mr-2"></i> Procesando...
+            } @else {
+              <i class="bi bi-shield-check mr-2"></i> Confirmar Rectificación Contable
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
