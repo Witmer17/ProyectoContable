@@ -61,6 +61,17 @@ docker compose up --build -d
 
 ---
 
+## 🗄️ Migraciones de base de datos (Alembic)
+
+El esquema se gestiona con Alembic (`backend/migrations/`); el contenedor del backend ejecuta `alembic upgrade head` al arrancar.
+
+```bash
+make migrate                      # aplicar migraciones
+make migration m="descripcion"    # generar una nueva a partir de los modelos
+```
+
+Las bases creadas antes de Alembic se actualizan solas (la migración base se omite si el esquema ya existe).
+
 ## 🧪 Ejecución de Pruebas Automatizadas
 
 El sistema incluye las 3 suites de pruebas exigidas en el Capítulo 6 del documento:

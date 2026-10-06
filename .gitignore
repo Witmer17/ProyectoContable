@@ -19,3 +19,6 @@ frontend/.angular/
 # Logs & temp
 *.log
 .DS_Store
+
+# Secrets
+.env

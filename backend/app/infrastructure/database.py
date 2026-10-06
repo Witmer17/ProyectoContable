@@ -33,4 +33,6 @@ def get_db():
         db.close()
 
 def init_db():
-    Base.metadata.create_all(bind=engine)
+    # En PostgreSQL el esquema lo gestiona Alembic (alembic upgrade head); create_all solo para SQLite local.
+    if DATABASE_URL.startswith("sqlite"):
+        Base.metadata.create_all(bind=engine)

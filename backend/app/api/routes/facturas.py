@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, status
 from app.application.dtos import FacturaVentaInputDTO, AsientoResponseDTO
 from app.application.use_cases import MapearFacturaPCGEUseCase
 from app.api.dependencies import get_mapear_factura_use_case
+from app.api.auth import requiere_roles, ROLES_ESCRITURA
 
 router = APIRouter(prefix="/facturas", tags=["Mapeo Facturación PCGE (End-to-End)"])
 
@@ -9,6 +10,7 @@ router = APIRouter(prefix="/facturas", tags=["Mapeo Facturación PCGE (End-to-En
 def emitir_y_contabilizar_factura(
     dto: FacturaVentaInputDTO,
     use_case: MapearFacturaPCGEUseCase = Depends(get_mapear_factura_use_case),
+    usuario=Depends(requiere_roles(*ROLES_ESCRITURA)),
 ):
     """
     Capítulo 5: Flujo End-to-End
@@ -18,4 +20,5 @@ def emitir_y_contabilizar_factura(
     - 70121: Mercaderías - Venta Local (Haber: Base Imponible)
     Valida partida doble, genera asiento en Libro Diario, actualiza el Mayor y notifica a SIRE/Kafka.
     """
+    dto.usuario = usuario.nombre_usuario
     return use_case.ejecutar(dto)

@@ -7,6 +7,7 @@ from app.domain.entities import BloqueoPeriodo
 from app.application.dtos import BloqueoPeriodoInputDTO
 from app.application.use_cases import BloquearPeriodoUseCase
 from app.ports.repositories import RepositorioPeriodosPort
+from app.api.auth import requiere_roles, ROLES_CIERRE
 from app.api.dependencies import (
     get_bloquear_periodo_use_case,
     get_repositorio_periodos,
@@ -46,11 +47,13 @@ def listar_periodos(
 def bloquear_periodo(
     dto: BloqueoPeriodoInputDTO,
     use_case: BloquearPeriodoUseCase = Depends(get_bloquear_periodo_use_case),
+    usuario=Depends(requiere_roles(*ROLES_CIERRE)),
 ):
     """
     3.1.1 Control de Bloqueo de Períodos
     Cambia el estado del período (ABIERTO, PROVISIONAL, DEFINITIVO).
     """
+    dto.usuario = usuario.nombre_usuario
     periodo = use_case.ejecutar(dto)
     return PeriodoResponseDTO(
         codigo_bloqueo=periodo.codigo_bloqueo,

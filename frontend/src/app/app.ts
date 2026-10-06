@@ -2,6 +2,7 @@ import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ContabilidadService } from './services/contabilidad.service';
+import { AuthService } from './services/auth.service';
 import {
   AsientoContable,
   CuentaPCGE,
@@ -22,6 +23,26 @@ import {
 })
 export class App implements OnInit {
   private service = inject(ContabilidadService);
+  auth = inject(AuthService);
+
+  loginUsuario = '';
+  loginClave = '';
+  loginError = signal<string | null>(null);
+
+  iniciarSesion() {
+    this.loginError.set(null);
+    this.auth.login(this.loginUsuario, this.loginClave).subscribe({
+      next: () => {
+        this.loginClave = '';
+        this.cargarDatosGenerales();
+      },
+      error: () => this.loginError.set('Usuario o contraseña incorrectos.'),
+    });
+  }
+
+  cerrarSesion() {
+    this.auth.logout();
+  }
 
   // Navegación
   activeTab = signal<'dashboard' | 'asientos' | 'nuevo' | 'factura' | 'pcge' | 'periodos' | 'reportes'>('dashboard');
@@ -117,7 +138,7 @@ export class App implements OnInit {
   });
 
   ngOnInit() {
-    this.cargarDatosGenerales();
+    if (this.auth.logueado()) this.cargarDatosGenerales();
   }
 
   cargarDatosGenerales() {

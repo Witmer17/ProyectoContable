@@ -13,6 +13,7 @@ from app.application.use_cases import (
     RectificarAsientoUseCase,
 )
 from app.ports.repositories import RepositorioAsientosPort
+from app.api.auth import requiere_roles, ROLES_ESCRITURA
 from app.api.dependencies import (
     get_crear_asiento_use_case,
     get_consultar_asiento_use_case,
@@ -26,11 +27,13 @@ router = APIRouter(prefix="/asientos", tags=["Asientos Contables"])
 def crear_asiento(
     dto: CrearAsientoInputDTO,
     use_case: CrearAsientoUseCase = Depends(get_crear_asiento_use_case),
+    usuario=Depends(requiere_roles(*ROLES_ESCRITURA)),
 ):
     """
     4.1.1 Crear Asiento Contable
     Registra un asiento en el Libro Diario validando partida doble, período abierto y cuentas activas.
     """
+    dto.usuario = usuario.nombre_usuario
     return use_case.ejecutar(dto)
 
 
@@ -57,11 +60,13 @@ def rectificar_asiento(
     partida: int,
     dto: RectificarAsientoInputDTO,
     use_case: RectificarAsientoUseCase = Depends(get_rectificar_asiento_use_case),
+    usuario=Depends(requiere_roles(*ROLES_ESCRITURA)),
 ):
     """
     4.1.3 Rectificar Asiento (No Borrar)
     Anula el asiento previo, revierte sus saldos, genera el nuevo asiento corregido y guarda auditoría.
     """
+    dto.usuario = usuario.nombre_usuario
     return use_case.ejecutar(partida, dto)
 
 

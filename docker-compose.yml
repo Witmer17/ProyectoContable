@@ -3,16 +3,15 @@ services:
     image: postgres:16-alpine
     container_name: contable_postgres
     environment:
-      POSTGRES_DB: sistema_contable
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-sistema_contable}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD en .env}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./backend/app/infrastructure/ddl.sql:/docker-entrypoint-initdb.d/01_ddl.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d sistema_contable"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -21,7 +20,7 @@ services:
     image: redis:7-alpine
     container_name: contable_redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
 
   backend:
     build:
@@ -29,9 +28,12 @@ services:
       dockerfile: Dockerfile
     container_name: contable_backend
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/sistema_contable
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-sistema_contable}
       REDIS_URL: redis://redis:6379/0
       PORT: 8000
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET en .env}
+      SEED_USER_PASSWORD: ${SEED_USER_PASSWORD:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200}
     ports:
       - "8000:8000"
     depends_on:
@@ -39,6 +41,23 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+
+  dispatcher:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: contable_dispatcher
+    command: ["python", "-m", "app.jobs.despachar_eventos", "--loop", "5"]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-sistema_contable}
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET en .env}
+    depends_on:
+      backend:
+        condition: service_started
+      redis:
+        condition: service_started
+    restart: unless-stopped
 
   frontend:
     build:

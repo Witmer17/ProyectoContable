@@ -10,6 +10,7 @@ from sqlalchemy import (
     CheckConstraint,
     UniqueConstraint,
     Index,
+    JSON,
     text,
 )
 from sqlalchemy.orm import declarative_base, relationship
@@ -195,6 +196,7 @@ class UsuarioSistemaModel(Base):
     estado = Column(String(20), default="ACTIVO")
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
     fecha_ultimo_acceso = Column(DateTime)
+    password_hash = Column(String(255))
 
     __table_args__ = (
         CheckConstraint("rol IN ('ADMIN', 'CONTADOR', 'AUDITOR', 'JEFE_CONTABILIDAD', 'GERENTE')", name="chk_rol_valido"),
@@ -218,4 +220,84 @@ class EventoConciliacionModel(Base):
         CheckConstraint("resultado IN ('EXITOSO', 'FALLIDO', 'PARCIAL')", name="chk_resultado"),
         Index("idx_evento_tipo", "tipo_evento"),
         Index("idx_evento_fecha", "fecha_evento"),
+    )
+
+
+class PlantillaAsientoModel(Base):
+    __tablename__ = "plantilla_asiento"
+
+    id_plantilla = Column(Integer, primary_key=True, autoincrement=True)
+    codigo = Column(String(50), nullable=False, unique=True)
+    nombre = Column(String(200), nullable=False)
+    descripcion = Column(String(500))
+    tipo_asiento = Column(String(20), nullable=False, default="OPERATIVO")
+    concepto_formato = Column(String(300), nullable=False)  # admite {variables}, ej. "Factura {numero}"
+    activo = Column(Boolean, default=True)
+
+    lineas = relationship(
+        "PlantillaLineaModel", back_populates="plantilla", cascade="all, delete-orphan",
+        order_by="PlantillaLineaModel.orden",
+    )
+
+    __table_args__ = (
+        CheckConstraint("tipo_asiento IN ('APERTURA', 'OPERATIVO', 'AJUSTE', 'REGULARIZACION', 'CIERRE')", name="chk_plantilla_tipo"),
+    )
+
+
+class PlantillaLineaModel(Base):
+    __tablename__ = "plantilla_linea"
+
+    id_linea = Column(Integer, primary_key=True, autoincrement=True)
+    id_plantilla = Column(Integer, ForeignKey("plantilla_asiento.id_plantilla", ondelete="CASCADE"), nullable=False)
+    orden = Column(Integer, nullable=False)
+    codigo_cuenta = Column(Integer, ForeignKey("cuenta.codigo"), nullable=False)
+    lado = Column(String(5), nullable=False)  # 'DEBE' | 'HABER'
+    variable = Column(String(50), nullable=False)  # nombre del importe que se aporta al aplicar la plantilla
+    glosa = Column(String(300))
+
+    plantilla = relationship("PlantillaAsientoModel", back_populates="lineas")
+
+    __table_args__ = (
+        CheckConstraint("lado IN ('DEBE', 'HABER')", name="chk_linea_lado"),
+        Index("idx_plantilla_linea_plantilla", "id_plantilla"),
+    )
+
+
+class AsientoRecurrenteModel(Base):
+    __tablename__ = "asiento_recurrente"
+
+    id_recurrente = Column(Integer, primary_key=True, autoincrement=True)
+    nombre = Column(String(200), nullable=False)
+    id_plantilla = Column(Integer, ForeignKey("plantilla_asiento.id_plantilla"), nullable=False)
+    valores = Column(JSON, nullable=False)  # {variable: importe} y textos para el concepto
+    dia_del_mes = Column(Integer, nullable=False)  # 1..28
+    fecha_inicio = Column(Date, nullable=False)
+    fecha_fin = Column(Date)
+    activo = Column(Boolean, default=True)
+    ultimo_periodo = Column(Integer)  # AAAAMM del último mes generado
+    usuario_creacion = Column(String(100), nullable=False)
+
+    plantilla = relationship("PlantillaAsientoModel")
+
+    __table_args__ = (
+        CheckConstraint("dia_del_mes >= 1 AND dia_del_mes <= 28", name="chk_recurrente_dia"),
+    )
+
+
+class EventoOutboxModel(Base):
+    """Cola persistente de eventos de dominio pendientes de entregar (patrón outbox)."""
+    __tablename__ = "evento_outbox"
+
+    id_evento = Column(Integer, primary_key=True, autoincrement=True)
+    tipo_evento = Column(String(100), nullable=False)
+    payload = Column(JSON, nullable=False)
+    estado = Column(String(15), nullable=False, default="PENDIENTE")  # PENDIENTE | ENVIADO | FALLIDO
+    intentos = Column(Integer, nullable=False, default=0)
+    ultimo_error = Column(String(500))
+    fecha_creacion = Column(DateTime, nullable=False, default=datetime.utcnow)
+    fecha_envio = Column(DateTime)
+
+    __table_args__ = (
+        CheckConstraint("estado IN ('PENDIENTE', 'ENVIADO', 'FALLIDO')", name="chk_outbox_estado"),
+        Index("idx_outbox_estado_id", "estado", "id_evento"),
     )

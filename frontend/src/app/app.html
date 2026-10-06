@@ -1,3 +1,19 @@
+@if (!auth.logueado()) {
+  <div class="min-h-screen bg-slate-100 flex items-center justify-center px-4">
+    <form (ngSubmit)="iniciarSesion()" class="bg-white shadow-lg rounded-xl p-8 w-full max-w-sm space-y-4">
+      <h1 class="text-xl font-bold text-indigo-900">Sistema Contable Empresarial</h1>
+      <p class="text-sm text-slate-500">Inicie sesión para continuar.</p>
+      <input name="usuario" [(ngModel)]="loginUsuario" placeholder="Usuario" required autocomplete="username"
+        class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm" />
+      <input name="clave" type="password" [(ngModel)]="loginClave" placeholder="Contraseña" required autocomplete="current-password"
+        class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm" />
+      @if (loginError()) {
+        <p class="text-sm text-red-600">{{ loginError() }}</p>
+      }
+      <button type="submit" class="w-full bg-indigo-800 hover:bg-indigo-900 text-white rounded-md py-2 text-sm font-medium">Ingresar</button>
+    </form>
+  </div>
+} @else {
 <div class="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
   <!-- HEADER & NAVBAR -->
   <header class="bg-indigo-900 text-white shadow-lg sticky top-0 z-40">
@@ -13,6 +29,8 @@
           </div>
         </div>
         <div class="hidden md:flex items-center space-x-2">
+          <span class="text-xs text-indigo-200">{{ auth.sesion()?.nombre_usuario }} ({{ auth.sesion()?.rol }})</span>
+          <button (click)="cerrarSesion()" class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-700 hover:bg-indigo-600 text-white">Salir</button>
           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-800 text-emerald-100 border border-emerald-600">
             <i class="bi bi-shield-check mr-1"></i> Partida Doble Rigurosa
           </span>
@@ -1048,3 +1066,4 @@
     </div>
   }
 </div>
+}

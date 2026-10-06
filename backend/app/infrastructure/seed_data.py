@@ -1,6 +1,8 @@
+import os
 from datetime import date, datetime
 from decimal import Decimal
 from sqlalchemy.orm import Session
+from app.api.security import hash_password
 from app.infrastructure.models import (
     TipoModel,
     NivelModel,
@@ -8,6 +10,8 @@ from app.infrastructure.models import (
     CuentaModel,
     BloqueoPeriodoModel,
     UsuarioSistemaModel,
+    PlantillaAsientoModel,
+    PlantillaLineaModel,
 )
 
 def ejecutar_seed(db: Session):
@@ -118,9 +122,17 @@ def ejecutar_seed(db: Session):
         ("auditor_carlos", "carlos.auditor@empresa.com", "AUDITOR"),
         ("gerente_ana", "ana.gerencia@empresa.com", "GERENTE"),
     ]
+    # Contraseña inicial de los usuarios sembrados (solo si SEED_USER_PASSWORD está definida).
+    seed_password = os.getenv("SEED_USER_PASSWORD")
+    password_hash = hash_password(seed_password) if seed_password else None
     for user, email, rol in usuarios:
-        if not db.query(UsuarioSistemaModel).filter(UsuarioSistemaModel.nombre_usuario == user).first():
+        existente = db.query(UsuarioSistemaModel).filter(UsuarioSistemaModel.nombre_usuario == user).first()
+        if existente:
+            if password_hash and not existente.password_hash:
+                existente.password_hash = password_hash
+        else:
             db.add(UsuarioSistemaModel(
+                password_hash=password_hash,
                 nombre_usuario=user,
                 correo_electronico=email,
                 rol=rol,
@@ -128,4 +140,22 @@ def ejecutar_seed(db: Session):
                 fecha_creacion=datetime.utcnow(),
             ))
 
+    db.commit()
+
+    # 7. Plantillas de asiento base (editables vía API)
+    plantillas = [
+        ("VENTA_GRAVADA", "Venta gravada con IGV", "Factura {numero} - {cliente}",
+         [(1212, "DEBE", "total"), (40111, "HABER", "igv"), (70121, "HABER", "base")]),
+        ("COMPRA_GRAVADA", "Compra de mercadería gravada con IGV", "Compra {numero} - {proveedor}",
+         [(6011, "DEBE", "base"), (40111, "DEBE", "igv"), (4212, "HABER", "total")]),
+        ("SEGURO_MENSUAL", "Devengo mensual de seguros", "Seguro {descripcion}",
+         [(6511, "DEBE", "monto"), (4212, "HABER", "monto")]),
+    ]
+    for codigo, nombre, concepto, lineas in plantillas:
+        if not db.query(PlantillaAsientoModel).filter(PlantillaAsientoModel.codigo == codigo).first():
+            db.add(PlantillaAsientoModel(
+                codigo=codigo, nombre=nombre, concepto_formato=concepto, tipo_asiento="OPERATIVO", activo=True,
+                lineas=[PlantillaLineaModel(orden=i, codigo_cuenta=c, lado=lado, variable=var)
+                        for i, (c, lado, var) in enumerate(lineas, start=1)],
+            ))
     db.commit()
