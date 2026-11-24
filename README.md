@@ -1,85 +1,51 @@
-# Sistema Contable Empresarial Mejorado
+# Sistema Contable para pymes peruanas (PCGE 2019)
 
-Sistema integral de gestión contable bajo **Clean Architecture** (Arquitectura Limpia / Hexagonal), diseñado conforme a la normativa fiscal peruana (**Plan Contable General Empresarial - PCGE 2026**, **Resolución N.º 234-2006/SUNAT**, **PLE 5.1** y compatibilidad **SIRE**).
+Sistema web para registrar operaciones de una empresa (comercial, de servicios, industrial o mixta). Cada operación genera sus asientos automáticamente en el formato de tres partes (provisión, destino y cancelación) y todo asiento cumple **Debe = Haber**. Versión 1: solo régimen general (IGV 18 %).
 
----
+| Capa | Tecnología |
+|---|---|
+| Frontend | Angular 22 (standalone, Signals, Reactive Forms, Angular Material) |
+| Backend | NestJS 10 + TypeScript, API REST, JWT con roles |
+| Base de datos | PostgreSQL 16 + Prisma |
+| Pruebas | Jest + Supertest (backend), Vitest (frontend) |
 
-## 🛠️ Tecnologías Utilizadas
-
-| Capa / Módulo | Tecnología | Justificación y Rol en el Sistema |
-|---|---|---|
-| **Backend API** | **Python 3.14 + FastAPI** | Framework asíncrono de alto rendimiento, tipado riguroso con Pydantic v2, generación automática de OpenAPI / Swagger. |
-| **Arquitectura** | **Clean Architecture (Hexagonal)** | Separación estricta en 4 capas: Dominio, Casos de Uso, Puertos y Adaptadores/Infraestructura. |
-| **Base de Datos** | **PostgreSQL 16** | Soporte de transacciones `SERIALIZABLE`, bloqueos pesimistas (`SELECT ... FOR UPDATE`), versionamiento optimista (`version`), e índices B-Tree/BRIN. |
-| **ORM / Acceso a Datos** | **SQLAlchemy 2.0** | Gestión de sesiones transaccionales, mapeo de las 10 entidades del modelo relacional. |
-| **Frontend** | **Angular (v22/v19 Standalone + Signals)** | SPA reactiva con Tailwind CSS, interfaz intuitiva para Libro Diario, validador de partida doble en tiempo real y exportador PLE. |
-| **Caché y Eventos** | **Redis 7** | Almacenamiento rápido de saldos de mayor y publicación de eventos fiscales (`asiento_contabilizado` para SIRE / Kafka). |
-| **Contenedores** | **Docker & Docker Compose** | Despliegue completo y orquestado de base de datos, caché, backend y frontend en un solo comando. |
-| **Testing** | **Pytest & Unittest** | Pruebas unitarias de partida doble, pruebas de integración transaccional y pruebas multihilo de concurrencia/deadlocks. |
-
----
-
-## 🏛️ Modelo Relacional (10 Tablas Principales)
-
-El esquema de base de datos en PostgreSQL implementa las 10 entidades fundamentales del sistema:
-1. `tipo`: Clasificación por naturaleza contable (Activo, Pasivo, Patrimonio, Ingresos, Gastos).
-2. `nivel`: Niveles jerárquicos del PCGE (Elemento, Principal, Subcuenta, Divisionaria, Subdivisionaria).
-3. `cuenta`: Catálogo arborescente del PCGE oficial (ej. `1212`, `40111`, `70121`).
-4. `moneda`: Gestión multimoneda (PEN, USD, EUR) y tipos de cambio oficiales.
-5. `partida_encabezado`: Cabecera del asiento en Libro Diario, separando moneda de origen vs. moneda funcional, con versionamiento optimista.
-6. `partida_detalle`: Movimientos y apuntes individuales del Libro Mayor con restricciones de integridad de partida doble.
-7. `auditoria_asiento`: Trazabilidad inmutable de todas las operaciones (INSERT, UPDATE) para cumplimiento de no borrado fiscal.
-8. `bloqueo_periodo`: Control de cierre mensual de períodos fiscales con bloqueo pesimista.
-9. `usuario_sistema`: Roles (ADMIN, CONTADOR, AUDITOR, GERENTE).
-10. `evento_conciliacion`: Registro de eventos de cierre, validaciones y sincronizaciones.
-
----
-
-## ⚡ Reglas Contables y Fiscales Implementadas
-
-- **Partida Doble (\(\sum Debe = \sum Haber\))**: Tolerancia matemática de \(0.01\) ante variaciones de redondeo cambiario.
-- **Prohibición de Enmiendas (SUNAT 4.1.3)**: No se eliminan físicamente asientos; la rectificación anula el asiento previo, revierte saldos del mayor, emite un nuevo asiento rectificado y deja registro en auditoría.
-- **Flujo End-to-End Factura de Venta**: Mapeo automático de Factura Comercial al PCGE:
-  - **Debe 1212**: Total Facturado (Cuentas por cobrar en cartera).
-  - **Haber 40111**: IGV 18% (Pasivo fiscal débito).
-  - **Haber 70121**: Base Imponible (Ventas gravadas locales).
-- **Exportación SUNAT PLE 5.1**: Generador oficial del archivo plano con delimitador pipe (`|`) y nomenclatura estándar: `LE[RUC][AÑO][MES]00050100001111.txt`.
-
----
-
-## 🚀 Despliegue con Docker Compose
-
-Para levantar toda la infraestructura (PostgreSQL, Redis, Backend FastAPI y Frontend Angular):
+## Puesta en marcha
 
 ```bash
+cp .env.example .env        # completa POSTGRES_PASSWORD, JWT_SECRET y SEED_USER_PASSWORD
 docker compose up --build -d
 ```
 
-- **Frontend Angular**: `http://localhost:4200`
-- **Backend FastAPI & Swagger UI**: `http://localhost:8000/docs`
-- **PostgreSQL**: `localhost:5432` (usuario: `postgres`, base de datos: `sistema_contable`)
+- Aplicación: http://localhost:4200 · API: http://localhost:3000/api
+- Al arrancar, el backend aplica las migraciones y carga (de forma idempotente) el catálogo PCGE, cuatro usuarios y los **datos demo** de la sección 9 (DEMO SAC, apertura de S/ 35,000, productos A/B/C, Proveedor 1 y Cliente 1). `SEED_DEMO=false` los omite.
+- Usuarios demo (clave = `SEED_USER_PASSWORD`): `admin@demo.pe`, `contador@demo.pe`, `auxiliar@demo.pe`, `lectura@demo.pe`.
 
----
+Desarrollo local: `make db`, luego `cd backend && npm i && npx prisma migrate deploy && npm run seed && npm run start:dev` y `cd frontend && npm i && npm start` (el proxy `/api` apunta a `localhost:3000`).
 
-## 🗄️ Migraciones de base de datos (Alembic)
-
-El esquema se gestiona con Alembic (`backend/migrations/`); el contenedor del backend ejecuta `alembic upgrade head` al arrancar.
+## Pruebas
 
 ```bash
-make migrate                      # aplicar migraciones
-make migration m="descripcion"    # generar una nueva a partir de los modelos
+cd backend && npm test        # motor de asientos: 26 pruebas, incluye las 12 operaciones de regresión
+E2E_DATABASE_URL=postgresql://user:pass@localhost:5432/sistema_test npm run test:e2e   # 27 pruebas vía HTTP
+cd frontend && npm test -- --watch=false
 ```
+La base e2e debe terminar en `_test` o `_verif`: **se vacía por completo**.
 
-Las bases creadas antes de Alembic se actualizan solas (la migración base se omite si el esquema ya existe).
+## Estructura
 
-## 🧪 Ejecución de Pruebas Automatizadas
+- `backend/src/motor-asientos`: reglas contables puras, sin HTTP ni base de datos (códigos de cuenta en `cuentas.ts`).
+- `backend/src/operaciones`: asistente (previsualización y registro), documentos, kárdex, pagos, planilla, depreciación, IGV, capital, apertura.
+- `backend/src/{empresa,cuentas,terceros,productos,activos,asientos,periodos,reportes,admin}`; `backend/prisma`: esquema, migraciones y seed.
+- `frontend/src/app`: `core`, `shared` (selector de cuenta código↔nombre, selector de tercero con "+ Nuevo", tabla de asientos, indicador de cuadre, montos Base/IGV/Total) y `pages`.
 
-El sistema incluye las 3 suites de pruebas exigidas en el Capítulo 6 del documento:
+## Roles
+Administrador: todo · Contador: todo menos configuración · Auxiliar: solo documentos y pagos · Lectura: solo reportes.
 
-```bash
-# Activar entorno virtual
-source backend/venv/bin/activate
+## Decisiones y límites (secciones 15 y 17)
+Por defecto: una empresa, soles (dólares al tipo de cambio del documento), kárdex a costo promedio ponderado, solo registro de comprobantes, RUC/DNI a mano con validación de formato, en línea.
 
-# Ejecutar tests unitarios, de integración y de concurrencia
-PYTHONPATH=backend pytest backend/tests/ -v
-```
+- Destino de compras: se usa **6111** (subcuenta de 611); verificar contra el PCGE vigente y corregir en `cuentas.ts` y `cuentas/catalogo.ts`. Igual con 4241, 4011/40172, 45, 676/776, 891/892 y 502.
+- Anticipo de cliente: Debe caja/banco; Haber 122 (base) y 40111 (IGV).
+- Producción industrial (92 → productos terminados): sin asistente, usar asiento manual.
+- Registros de compras/ventas: Excel y PDF; el TXT PLE de SUNAT no está implementado.
+- La liquidación de IGV no arrastra saldo a favor de meses anteriores.

@@ -1,4 +1,4 @@
-.PHONY: despachar recurrentes migrate migration up down logs test test-backend build-frontend
+.PHONY: up down db logs test test-e2e build-frontend migrate seed
 
 up:
 	docker compose up --build -d
@@ -6,25 +6,25 @@ up:
 down:
 	docker compose down
 
+# Solo la base de datos (para desarrollo local)
+db:
+	docker compose up -d db
+
 logs:
 	docker compose logs -f
 
-test: test-backend
+test:
+	cd backend && npm test
 
-test-backend:
-	PYTHONPATH=backend backend/venv/bin/pytest backend/tests -v
+# Requiere E2E_DATABASE_URL apuntando a una base vacía cuyo nombre termine en _test
+test-e2e:
+	cd backend && npm run test:e2e
 
 build-frontend:
 	cd frontend && npm run build
 
 migrate:
-	cd backend && PYTHONPATH=. venv/bin/alembic upgrade head
+	cd backend && npx prisma migrate deploy
 
-migration:
-	cd backend && PYTHONPATH=. venv/bin/alembic revision --autogenerate -m "$(m)"
-
-recurrentes:
-	cd backend && PYTHONPATH=. venv/bin/python -m app.jobs.ejecutar_recurrentes
-
-despachar:
-	cd backend && PYTHONPATH=. venv/bin/python -m app.jobs.despachar_eventos
+seed:
+	cd backend && npm run seed

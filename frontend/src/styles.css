@@ -1,1 +1,29 @@
-/* You can add global styles to this file, and also import other style files */
+@import '@angular/material/prebuilt-themes/azure-blue.css';
+
+html, body { height: 100%; margin: 0; font-family: Roboto, sans-serif; background: #f5f7fa; color: #1f2937; }
+a { color: #1d4ed8; }
+.pagina { max-width: 1100px; margin: 0 auto; padding: 16px; }
+.pagina h1 { font-size: 1.5rem; margin: 8px 0 16px; }
+.fila { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
+.fila > * { flex: 1 1 200px; }
+.fila .angosto { flex: 0 1 140px; }
+.acciones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+.muted { color: #6b7280; font-size: .85rem; }
+.nota { background: #eff6ff; border-left: 3px solid #3b82f6; padding: 6px 10px; margin: 4px 0; font-size: .85rem; border-radius: 2px; }
+.falta { color: #b91c1c; font-size: .8rem; margin-top: -4px; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.t { width: 100%; border-collapse: collapse; background: #fff; }
+table.t th, table.t td { padding: 6px 10px; border-bottom: 1px solid #e5e7eb; text-align: left; font-size: .9rem; }
+table.t th { background: #f3f4f6; position: sticky; top: 0; }
+table.t td.num, table.t th.num { text-align: right; }
+table.t tr.negrita td { font-weight: 600; background: #f9fafb; }
+.scroll { overflow-x: auto; }
+.tarjetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.tarjeta-op { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 10px; border: 1px solid #d1d5db; border-radius: 10px; background: #fff; cursor: pointer; text-align: center; font: inherit; min-height: 110px; }
+.tarjeta-op:hover, .tarjeta-op:focus-visible { border-color: #2563eb; box-shadow: 0 0 0 2px #bfdbfe; outline: none; }
+.tarjeta-op mat-icon { font-size: 34px; width: 34px; height: 34px; color: #2563eb; }
+.cuadra { color: #166534; background: #dcfce7; padding: 4px 10px; border-radius: 12px; font-weight: 500; }
+.nocuadra { color: #991b1b; background: #fee2e2; padding: 4px 10px; border-radius: 12px; font-weight: 500; }
+mat-form-field { width: 100%; }
+.rojo input, .rojo .mat-mdc-select { color: #b91c1c; }
+@media (max-width: 700px) { .pagina { padding: 8px; } }

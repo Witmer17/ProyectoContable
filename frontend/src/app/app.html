@@ -1,17 +1,75 @@
 @if (!auth.logueado()) {
-  <div class="min-h-screen bg-slate-100 flex items-center justify-center px-4">
-    <form (ngSubmit)="iniciarSesion()" class="bg-white shadow-lg rounded-xl p-8 w-full max-w-sm space-y-4">
-      <h1 class="text-xl font-bold text-indigo-900">Sistema Contable Empresarial</h1>
-      <p class="text-sm text-slate-500">Inicie sesión para continuar.</p>
-      <input name="usuario" [(ngModel)]="loginUsuario" placeholder="Usuario" required autocomplete="username"
-        class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm" />
-      <input name="clave" type="password" [(ngModel)]="loginClave" placeholder="Contraseña" required autocomplete="current-password"
-        class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm" />
-      @if (loginError()) {
-        <p class="text-sm text-red-600">{{ loginError() }}</p>
-      }
-      <button type="submit" class="w-full bg-indigo-800 hover:bg-indigo-900 text-white rounded-md py-2 text-sm font-medium">Ingresar</button>
-    </form>
+  <div class="min-h-screen bg-slate-100 flex items-center justify-center px-4 py-8">
+    <div class="bg-white shadow-xl rounded-2xl p-8 w-full max-w-md space-y-5 border border-slate-200">
+      <div class="text-center space-y-1">
+        <div class="inline-flex items-center justify-center w-12 h-12 bg-indigo-800 text-amber-400 rounded-xl mb-2 shadow-inner">
+          <i class="bi bi-bank2 text-2xl"></i>
+        </div>
+        <h1 class="text-xl font-bold text-indigo-950">Sistema Contable Empresarial</h1>
+        <p class="text-xs text-slate-500">Arquitectura Limpia • Normativa SUNAT (PCGE 2026, PLE & SIRE)</p>
+      </div>
+
+      <form (ngSubmit)="iniciarSesion()" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Nombre de Usuario</label>
+          <input name="usuario" [(ngModel)]="loginUsuario" placeholder="Ej. admin_juan o contador_juana" required autocomplete="username"
+            class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Contraseña</label>
+          <input name="clave" type="password" [(ngModel)]="loginClave" placeholder="••••••••" required autocomplete="current-password"
+            class="w-full border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+        </div>
+
+        @if (loginError()) {
+          <div class="bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg p-2.5 flex items-center">
+            <i class="bi bi-exclamation-circle-fill mr-1.5 text-rose-500"></i>
+            {{ loginError() }}
+          </div>
+        }
+
+        <button type="submit" class="w-full bg-indigo-800 hover:bg-indigo-900 text-white rounded-lg py-2.5 text-sm font-semibold shadow-md transition flex items-center justify-center">
+          <i class="bi bi-box-arrow-in-right mr-2 text-base"></i> Iniciar Sesión
+        </button>
+      </form>
+
+      <!-- CREDENCIALES ASIGNADAS Y ACCESO RÁPIDO -->
+      <div class="pt-4 border-t border-slate-100">
+        <p class="text-xs font-bold text-slate-700 mb-2 flex items-center">
+          <i class="bi bi-key-fill text-amber-500 mr-1.5"></i>
+          Credenciales Asignadas (Clic para ingresar):
+        </p>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <button type="button" (click)="seleccionarUsuario('admin_juan', 'Admin123*')"
+            class="p-2 border border-indigo-100 bg-indigo-50/50 hover:bg-indigo-100/70 text-indigo-950 rounded-lg text-left transition">
+            <div class="font-bold">admin_juan</div>
+            <div class="text-[11px] text-slate-500">Clave: <code class="text-indigo-600 font-bold">Admin123*</code></div>
+            <span class="inline-block px-1.5 py-0.2 bg-indigo-200 text-indigo-800 rounded text-[10px] font-semibold mt-1">ADMIN</span>
+          </button>
+
+          <button type="button" (click)="seleccionarUsuario('contador_juana', 'Contador123*')"
+            class="p-2 border border-emerald-100 bg-emerald-50/50 hover:bg-emerald-100/70 text-emerald-950 rounded-lg text-left transition">
+            <div class="font-bold">contador_juana</div>
+            <div class="text-[11px] text-slate-500">Clave: <code class="text-emerald-700 font-bold">Contador123*</code></div>
+            <span class="inline-block px-1.5 py-0.2 bg-emerald-200 text-emerald-800 rounded text-[10px] font-semibold mt-1">CONTADOR</span>
+          </button>
+
+          <button type="button" (click)="seleccionarUsuario('auditor_carlos', 'Auditor123*')"
+            class="p-2 border border-blue-100 bg-blue-50/50 hover:bg-blue-100/70 text-blue-950 rounded-lg text-left transition">
+            <div class="font-bold">auditor_carlos</div>
+            <div class="text-[11px] text-slate-500">Clave: <code class="text-blue-700 font-bold">Auditor123*</code></div>
+            <span class="inline-block px-1.5 py-0.2 bg-blue-200 text-blue-800 rounded text-[10px] font-semibold mt-1">AUDITOR</span>
+          </button>
+
+          <button type="button" (click)="seleccionarUsuario('gerente_ana', 'Gerente123*')"
+            class="p-2 border border-amber-100 bg-amber-50/50 hover:bg-amber-100/70 text-amber-950 rounded-lg text-left transition">
+            <div class="font-bold">gerente_ana</div>
+            <div class="text-[11px] text-slate-500">Clave: <code class="text-amber-700 font-bold">Gerente123*</code></div>
+            <span class="inline-block px-1.5 py-0.2 bg-amber-200 text-amber-800 rounded text-[10px] font-semibold mt-1">GERENTE</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 } @else {
 <div class="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">

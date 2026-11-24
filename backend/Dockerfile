@@ -1,23 +1,11 @@
-FROM python:3.14-slim
-
+FROM node:22-alpine
 WORKDIR /app
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY app/ ./app/
-COPY alembic.ini ./
-COPY migrations/ ./migrations/
-
-ENV PYTHONPATH=/app
-ENV PORT=8000
-
-EXPOSE 8000
-
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.api.main:app --host 0.0.0.0 --port 8000"]
+RUN apk add --no-cache openssl
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npx prisma generate && npm run build
+ENV NODE_ENV=production PORT=3000
+EXPOSE 3000
+# Aplica migraciones, carga catálogo/usuarios/demo (idempotente) y arranca la API
+CMD ["sh", "-c", "npx prisma migrate deploy && npx ts-node prisma/seed.ts && node dist/main.js"]

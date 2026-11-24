@@ -16,53 +16,26 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: contable_redis
-    ports:
-      - "127.0.0.1:6379:6379"
-
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
     container_name: contable_backend
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-sistema_contable}
-      REDIS_URL: redis://redis:6379/0
-      PORT: 8000
+      PORT: 3000
       JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET en .env}
-      SEED_USER_PASSWORD: ${SEED_USER_PASSWORD:-}
+      SEED_USER_PASSWORD: ${SEED_USER_PASSWORD:?defina SEED_USER_PASSWORD en .env}
+      SEED_DEMO: ${SEED_DEMO:-true}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200}
     ports:
-      - "8000:8000"
+      - "3000:3000"
     depends_on:
       db:
         condition: service_healthy
-      redis:
-        condition: service_started
-
-  dispatcher:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: contable_dispatcher
-    command: ["python", "-m", "app.jobs.despachar_eventos", "--loop", "5"]
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-sistema_contable}
-      REDIS_URL: redis://redis:6379/0
-      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET en .env}
-    depends_on:
-      backend:
-        condition: service_started
-      redis:
-        condition: service_started
-    restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
     container_name: contable_frontend
     ports:
       - "4200:80"

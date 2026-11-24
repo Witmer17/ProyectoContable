@@ -1,0 +1,262 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rol {
+  ADMINISTRADOR
+  CONTADOR
+  AUXILIAR
+  LECTURA
+}
+
+enum Actividad {
+  COMERCIAL
+  SERVICIOS
+  INDUSTRIAL
+  MIXTA
+}
+
+enum TipoTercero {
+  CLIENTE
+  PROVEEDOR
+  SOCIO
+  TRABAJADOR
+}
+
+enum SentidoDocumento {
+  COMPRA
+  VENTA
+}
+
+enum Condicion {
+  CONTADO_EFECTIVO
+  CONTADO_BANCO
+  CREDITO
+}
+
+enum EstadoAsiento {
+  ACTIVO
+  ANULADO
+}
+
+enum EtapaLinea {
+  PROVISION
+  DESTINO
+  CANCELACION
+  COSTO
+  BAJA
+  OTRO
+}
+
+enum TipoMovKardex {
+  ENTRADA
+  SALIDA
+}
+
+model Empresa {
+  id               Int       @id @default(1)
+  ruc              String
+  razonSocial      String
+  actividad        Actividad @default(COMERCIAL)
+  tienePlanilla    Boolean   @default(false)
+  tieneActivos     Boolean   @default(false)
+  usaDolares       Boolean   @default(false)
+  recibeHonorarios Boolean   @default(false)
+  igvTasa          Decimal   @default(0.18) @db.Decimal(5, 4)
+  retencionTasa    Decimal   @default(0.08) @db.Decimal(5, 4)
+  metodoKardex     String    @default("PROMEDIO")
+  configurada      Boolean   @default(false)
+  perfil           String    @default("PERSONALIZADO")
+}
+
+model Usuario {
+  id           Int        @id @default(autoincrement())
+  email        String     @unique
+  nombre       String
+  passwordHash String
+  rol          Rol
+  activo       Boolean    @default(true)
+  creadoEn     DateTime   @default(now())
+  asientos     Asiento[]
+  auditorias   Auditoria[]
+}
+
+model Cuenta {
+  codigo         String  @id
+  nombre         String
+  elemento       Int
+  naturaleza     String // DEUDORA | ACREEDORA
+  nivel          Int
+  ultimoNivel    Boolean @default(true)
+  requiereDestino Boolean @default(false)
+  destinoDefecto String?
+  activa         Boolean @default(true)
+  // actividades en las que aparece: COMERCIAL, SERVICIOS, INDUSTRIAL; vacío = todas
+  perfiles       String[]
+  // módulo que la activa: PLANILLA, ACTIVOS, DOLARES, HONORARIOS; vacío = ninguno
+  modulo         String?
+  uso            Int     @default(0)
+  lineas         AsientoLinea[]
+}
+
+model Tercero {
+  id         Int         @id @default(autoincrement())
+  tipo       TipoTercero
+  tipoDoc    String // RUC | DNI
+  documento  String
+  nombre     String
+  direccion  String?
+  sueldo     Decimal?    @db.Decimal(14, 2)
+  pension    String? // ONP | AFP
+  activo     Boolean     @default(true)
+  documentos Documento[]
+  lineas     AsientoLinea[]
+
+  @@unique([tipo, documento])
+}
+
+model Producto {
+  id            Int      @id @default(autoincrement())
+  codigo        String   @unique
+  nombre        String
+  unidad        String   @default("UND")
+  stock         Decimal  @default(0) @db.Decimal(14, 4)
+  costoPromedio Decimal  @default(0) @db.Decimal(14, 6)
+  valorTotal    Decimal  @default(0) @db.Decimal(14, 2)
+  tipo          String   @default("MERCADERIA") // MERCADERIA | MATERIA_PRIMA | PRODUCTO_TERMINADO
+  movimientos   KardexMov[]
+}
+
+model KardexMov {
+  id         Int           @id @default(autoincrement())
+  productoId Int
+  producto   Producto      @relation(fields: [productoId], references: [id])
+  fecha      DateTime      @db.Date
+  tipo       TipoMovKardex
+  cantidad   Decimal       @db.Decimal(14, 4)
+  costoUnit  Decimal       @db.Decimal(14, 6)
+  costoTotal Decimal       @db.Decimal(14, 2)
+  saldoCant  Decimal       @db.Decimal(14, 4)
+  saldoCosto Decimal       @db.Decimal(14, 2)
+  asientoId  Int?
+  creadoEn   DateTime      @default(now())
+}
+
+model ActivoFijo {
+  id             Int       @id @default(autoincrement())
+  nombre         String
+  cuenta         String // 3341, 3351, 336, 333, 332
+  fechaCompra    DateTime  @db.Date
+  valor          Decimal   @db.Decimal(14, 2)
+  vidaUtilMeses  Int
+  tasaAnual      Decimal   @db.Decimal(6, 4)
+  depreciado     Decimal   @default(0) @db.Decimal(14, 2)
+  estado         String    @default("ACTIVO") // ACTIVO | BAJA | VENDIDO
+  documentoId    Int?
+}
+
+model Documento {
+  id          Int              @id @default(autoincrement())
+  sentido     SentidoDocumento
+  tipo        String // 01, 03, 07, 08, RH, OT
+  serie       String
+  numero      String
+  terceroId   Int
+  tercero     Tercero          @relation(fields: [terceroId], references: [id])
+  fecha       DateTime         @db.Date
+  vencimiento DateTime?        @db.Date
+  moneda      String           @default("PEN")
+  tipoCambio  Decimal          @default(1) @db.Decimal(8, 4)
+  base        Decimal          @db.Decimal(14, 2)
+  igv         Decimal          @db.Decimal(14, 2)
+  total       Decimal          @db.Decimal(14, 2)
+  saldo       Decimal          @db.Decimal(14, 2)
+  condicion   Condicion
+  operacion   String
+  glosa       String
+  asientoId   Int?
+  anulado     Boolean          @default(false)
+  creadoEn    DateTime         @default(now())
+  pagos       Pago[]
+
+  @@unique([tipo, serie, numero, terceroId])
+}
+
+model Pago {
+  id          Int       @id @default(autoincrement())
+  documentoId Int
+  documento   Documento @relation(fields: [documentoId], references: [id])
+  fecha       DateTime  @db.Date
+  monto       Decimal   @db.Decimal(14, 2)
+  medio       String // EFECTIVO | BANCO
+  cuentaBancaria String?
+  asientoId   Int?
+}
+
+model Asiento {
+  id            Int           @id @default(autoincrement())
+  numero        Int           @unique
+  fecha         DateTime      @db.Date
+  periodo       String // AAAA-MM
+  operacion     String
+  glosa         String
+  estado        EstadoAsiento @default(ACTIVO)
+  motivoAnulacion String?
+  reversionId   Int?          // asiento que revierte a este
+  revierteA     Int?          // asiento al que este revierte
+  usuarioId     Int?
+  usuario       Usuario?      @relation(fields: [usuarioId], references: [id])
+  creadoEn      DateTime      @default(now())
+  lineas        AsientoLinea[]
+
+  @@index([periodo])
+}
+
+model AsientoLinea {
+  id         Int        @id @default(autoincrement())
+  asientoId  Int
+  asiento    Asiento    @relation(fields: [asientoId], references: [id])
+  orden      Int
+  cuentaCodigo String
+  cuenta     Cuenta     @relation(fields: [cuentaCodigo], references: [codigo])
+  debe       Decimal    @default(0) @db.Decimal(14, 2)
+  haber      Decimal    @default(0) @db.Decimal(14, 2)
+  etapa      EtapaLinea @default(OTRO)
+  terceroId  Int?
+  tercero    Tercero?   @relation(fields: [terceroId], references: [id])
+  glosa      String?
+
+  @@index([cuentaCodigo])
+}
+
+model Periodo {
+  id       Int      @id @default(autoincrement())
+  anio     Int
+  mes      Int
+  cerrado  Boolean  @default(false)
+  motivo   String?
+  cerradoEn DateTime?
+
+  @@unique([anio, mes])
+}
+
+model TipoCambio {
+  fecha DateTime @id @db.Date
+  valor Decimal  @db.Decimal(8, 4)
+}
+
+model Auditoria {
+  id         Int      @id @default(autoincrement())
+  usuarioId  Int?
+  usuario    Usuario? @relation(fields: [usuarioId], references: [id])
+  accion     String
+  entidad    String
+  entidadId  String?
+  detalle    String?
+  fecha      DateTime @default(now())
+}

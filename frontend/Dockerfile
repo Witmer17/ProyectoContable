@@ -18,6 +18,11 @@ COPY --from=build /app/dist/frontend/browser /usr/share/nginx/html
 RUN echo 'server { \
     listen 80; \
     server_name localhost; \
+    location /api/ { \
+        proxy_pass http://backend:3000; \
+        proxy_set_header Host $host; \
+        client_max_body_size 20m; \
+    } \
     location / { \
         root /usr/share/nginx/html; \
         index index.html index.htm; \
