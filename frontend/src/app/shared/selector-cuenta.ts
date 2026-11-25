@@ -6,7 +6,15 @@ import { MatInputModule } from '@angular/material/input';
 import { Api, errorDe } from '../core/api';
 import { Auth } from '../core/auth';
 
-export interface Cuenta { codigo: string; nombre: string; naturaleza: string; requiereDestino?: boolean }
+export interface Cuenta {
+  codigo: string;
+  nombre: string;
+  naturaleza: string;
+  requiereDestino?: boolean;
+  destinoDefecto?: string;
+  activa?: boolean;
+  ultimoNivel?: boolean;
+}
 
 /**
  * Código y nombre sincronizados: al escribir el código se completa el nombre y al elegir un nombre

@@ -21,12 +21,13 @@ services:
       context: ./backend
     container_name: contable_backend
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-sistema_contable}
-      PORT: 3000
-      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET en .env}
-      SEED_USER_PASSWORD: ${SEED_USER_PASSWORD:?defina SEED_USER_PASSWORD en .env}
-      SEED_DEMO: ${SEED_DEMO:-true}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-sistema_contable}
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:-un_secreto_super_seguro_jwt_para_desarrollo_2026_sistema_contable}
+      APISPERU_TOKEN: ${APISPERU_TOKEN:-eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImhyZW1zMDc3QGdtYWlsLmNvbSIsImp0aSI6Ijk0OGNkYjg4YmJmMTRkNWQifQ.hr7rWG1FpFKMdItcsjR7f5iXFiojaWqs55_SlD8wAGo}
     ports:
       - "3000:3000"
     depends_on:

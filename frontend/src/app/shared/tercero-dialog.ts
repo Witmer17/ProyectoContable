@@ -3,7 +3,9 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { Api, errorDe } from '../core/api';
 
@@ -12,18 +14,26 @@ export interface Tercero { id: number; tipo: TipoTercero; tipoDoc: string; docum
 
 /** Modal para crear un tercero sin salir de la pantalla; al guardar devuelve el nuevo registro. */
 @Component({
-  imports: [ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule],
+  imports: [ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
   template: `
     <h2 mat-dialog-title>Nuevo {{ etiqueta }}</h2>
     <form [formGroup]="f" (ngSubmit)="guardar()">
       <mat-dialog-content>
         <mat-form-field><mat-label>Tipo de documento</mat-label>
-          <mat-select formControlName="tipoDoc"><mat-option value="RUC">RUC (11 dígitos)</mat-option><mat-option value="DNI">DNI (8 dígitos)</mat-option></mat-select>
+          <mat-select formControlName="tipoDoc" (selectionChange)="limpiarBusqueda()"><mat-option value="RUC">RUC (11 dígitos)</mat-option><mat-option value="DNI">DNI (8 dígitos)</mat-option></mat-select>
         </mat-form-field>
-        <mat-form-field><mat-label>Número de documento</mat-label>
-          <input matInput formControlName="documento" inputmode="numeric" autocomplete="off" />
-          @if (errores()['documento']) { <mat-error>{{ errores()['documento'] }}</mat-error> }
-        </mat-form-field>
+        <div style="display:flex; gap:8px; align-items:center">
+          <mat-form-field style="flex:1"><mat-label>Número de documento</mat-label>
+            <input matInput formControlName="documento" inputmode="numeric" autocomplete="off" (keyup.enter)="consultar()" />
+            @if (errores()['documento']) { <mat-error>{{ errores()['documento'] }}</mat-error> }
+          </mat-form-field>
+          <button mat-flat-button color="primary" type="button" (click)="consultar()" [disabled]="consultando() || !docValido()" title="Consultar en SUNAT / RENIEC">
+            @if (consultando()) { <mat-spinner diameter="18"></mat-spinner> } @else { <span><mat-icon>search</mat-icon> Buscar</span> }
+          </button>
+        </div>
+        @if (mensajeConsulta()) {
+          <p style="margin: -8px 0 12px; font-size:12px; color:#15803d; font-weight:500">{{ mensajeConsulta() }}</p>
+        }
         <mat-form-field><mat-label>Nombre o razón social</mat-label><input matInput formControlName="nombre" autocomplete="off" /></mat-form-field>
         <mat-form-field><mat-label>Dirección (opcional)</mat-label><input matInput formControlName="direccion" autocomplete="off" /></mat-form-field>
         @if (data.tipo === 'TRABAJADOR') {
@@ -46,6 +56,8 @@ export class TerceroDialog {
   private ref = inject(MatDialogRef<TerceroDialog, Tercero>);
   private api = inject(Api);
   guardando = signal(false);
+  consultando = signal(false);
+  mensajeConsulta = signal('');
   errores = signal<Record<string, string>>({});
   f = inject(FormBuilder).nonNullable.group({
     tipoDoc: [this.data.tipo === 'CLIENTE' || this.data.tipo === 'PROVEEDOR' ? 'RUC' : 'DNI', Validators.required],
@@ -56,6 +68,55 @@ export class TerceroDialog {
     pension: ['ONP'],
   });
   etiqueta = { CLIENTE: 'cliente', PROVEEDOR: 'proveedor', SOCIO: 'socio', TRABAJADOR: 'trabajador' }[this.data.tipo];
+
+  docValido() {
+    const doc = this.f.controls.documento.value.trim();
+    const tipo = this.f.controls.tipoDoc.value;
+    return tipo === 'RUC' ? /^\d{11}$/.test(doc) : /^\d{8}$/.test(doc);
+  }
+
+  limpiarBusqueda() {
+    this.mensajeConsulta.set('');
+    this.errores.update((e) => ({ ...e, documento: '' }));
+  }
+
+  consultar() {
+    const doc = this.f.controls.documento.value.trim();
+    const tipo = this.f.controls.tipoDoc.value;
+    if (!this.docValido()) {
+      this.errores.update((e) => ({ ...e, documento: tipo === 'RUC' ? 'RUC debe tener 11 dígitos' : 'DNI debe tener 8 dígitos' }));
+      return;
+    }
+    this.consultando.set(true);
+    this.mensajeConsulta.set('');
+    this.errores.update((e) => ({ ...e, documento: '', general: '' }));
+
+    const url = tipo === 'RUC' ? `/terceros/consulta-ruc/${doc}` : `/terceros/consulta-dni/${doc}`;
+    this.api.get<any>(url).subscribe({
+      next: (res) => {
+        this.consultando.set(false);
+        if (tipo === 'RUC') {
+          this.f.patchValue({
+            nombre: res.razonSocial || res.nombre || '',
+            direccion: res.direccion || this.f.controls.direccion.value,
+          });
+          const estado = res.estado ? ` [SUNAT: ${res.estado} - ${res.condicion || 'HABIDO'}]` : '';
+          this.mensajeConsulta.set(`✓ RUC encontrado: ${res.razonSocial || res.nombre}${estado}`);
+        } else {
+          const nom = res.nombreCompleto || res.nombre || [res.nombres, res.apellidoPaterno, res.apellidoMaterno].filter(Boolean).join(' ');
+          this.f.patchValue({
+            nombre: nom || '',
+          });
+          this.mensajeConsulta.set(`✓ DNI encontrado (RENIEC): ${nom}`);
+        }
+      },
+      error: (e) => {
+        this.consultando.set(false);
+        const er = errorDe(e);
+        this.errores.update((prev) => ({ ...prev, documento: er.mensaje || 'No se encontró información' }));
+      },
+    });
+  }
 
   guardar() {
     this.guardando.set(true);

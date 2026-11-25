@@ -22,3 +22,9 @@ frontend/.angular/
 
 # Secrets
 .env
+
+# Maven / Java
+target/
+backend/target/
+*.jar
+

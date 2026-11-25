@@ -5,7 +5,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Api, errorDe } from '../core/api';
 import { Empresa, EmpresaStore } from '../core/empresa';
@@ -21,7 +23,7 @@ const ACTIVIDADES = [
 ] as const;
 
 @Component({
-  imports: [ReactiveFormsModule, MatCardModule, MatButtonModule, MatButtonToggleModule, MatFormFieldModule, MatInputModule],
+  imports: [ReactiveFormsModule, MatCardModule, MatButtonModule, MatButtonToggleModule, MatFormFieldModule, MatInputModule, MatIconModule, MatProgressSpinnerModule],
   template: `
     <div class="pagina">
       <h1>{{ store.empresa()?.configurada ? 'Configuración' : 'Bienvenido: configuremos tu empresa' }}</h1>
@@ -69,9 +71,18 @@ const ACTIVIDADES = [
       <mat-card style="padding:16px;margin-bottom:16px">
         <h2>Datos de la empresa</h2>
         <form [formGroup]="datos" (ngSubmit)="guardarDatos()">
-          <div class="fila">
-            <mat-form-field><mat-label>RUC</mat-label><input matInput formControlName="ruc" inputmode="numeric" /></mat-form-field>
-            <mat-form-field><mat-label>Razón social</mat-label><input matInput formControlName="razonSocial" /></mat-form-field>
+          <div class="fila" style="align-items:center; gap:12px; flex-wrap:wrap">
+            <mat-form-field style="width:200px">
+              <mat-label>RUC (11 dígitos)</mat-label>
+              <input matInput formControlName="ruc" inputmode="numeric" (keyup.enter)="consultarRucEmpresa()" />
+            </mat-form-field>
+            <button mat-flat-button color="primary" type="button" (click)="consultarRucEmpresa()" [disabled]="consultandoRuc()" style="height:48px">
+              @if (consultandoRuc()) { <mat-spinner diameter="18"></mat-spinner> } @else { <span><mat-icon>search</mat-icon> Consultar SUNAT</span> }
+            </button>
+            <mat-form-field style="flex:1; min-width:280px">
+              <mat-label>Razón social de la empresa</mat-label>
+              <input matInput formControlName="razonSocial" />
+            </mat-form-field>
           </div>
           @if (errorRuc()) { <p class="falta" role="alert">{{ errorRuc() }}</p> }
           <div class="fila">
@@ -121,6 +132,7 @@ export class Configuracion implements OnInit {
   resp = signal<Record<string, boolean>>({ tienePlanilla: false, tieneActivos: false, usaDolares: false, recibeHonorarios: false });
   avisos = signal<string[]>([]);
   guardando = signal(false);
+  consultandoRuc = signal(false);
   errorRuc = signal('');
   datos = this.fb.group({ ruc: ['', [Validators.required, Validators.pattern(/^\d{11}$/)]], razonSocial: ['', Validators.required], igvTasa: [0.18], retencionTasa: [0.08] });
   tc = this.fb.group({ fecha: [hoy(), Validators.required], valor: [3.4, [Validators.required, Validators.min(0.01)]] });
@@ -156,6 +168,29 @@ export class Configuracion implements OnInit {
         else if (!r.avisos.length) this.router.navigateByUrl('/');
       },
       error: (e) => { this.snack.open(errorDe(e).mensaje, 'OK', { duration: 5000 }); this.guardando.set(false); },
+    });
+  }
+
+  consultarRucEmpresa() {
+    const ruc = this.datos.controls.ruc.value.trim();
+    if (!/^\d{11}$/.test(ruc)) {
+      this.errorRuc.set('El RUC debe tener 11 dígitos numéricos');
+      return;
+    }
+    this.consultandoRuc.set(true);
+    this.errorRuc.set('');
+    this.api.get<any>(`/terceros/consulta-ruc/${ruc}`).subscribe({
+      next: (res) => {
+        this.consultandoRuc.set(false);
+        if (res.razonSocial) {
+          this.datos.patchValue({ razonSocial: res.razonSocial });
+          this.snack.open(`✓ SUNAT: ${res.razonSocial}`, 'OK', { duration: 3500 });
+        }
+      },
+      error: (e) => {
+        this.consultandoRuc.set(false);
+        this.errorRuc.set(errorDe(e).mensaje || 'No se pudo consultar el RUC en SUNAT');
+      },
     });
   }
 

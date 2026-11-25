@@ -14,6 +14,7 @@ import { soles } from '../core/util';
 import { Producto, ProductoDialog } from '../shared/producto-dialog';
 import { Cuenta } from '../shared/selector-cuenta';
 import { Tercero, TerceroDialog, TipoTercero } from '../shared/tercero-dialog';
+import { CuentaDialog } from '../shared/cuenta-dialog';
 
 @Component({
   imports: [FormsModule, MatButtonModule, MatFormFieldModule, MatSelectModule, MatIconModule, MatInputModule],
@@ -55,7 +56,7 @@ export class Terceros implements OnInit {
   ]);
   ngOnInit() { this.cargar(); }
   cargar() { this.api.get<Tercero[]>('/terceros', { tipo: this.tipo, q: this.q }).subscribe((l) => this.lista.set(l)); }
-  nuevo(tipo: TipoTercero) { this.dialog.open(TerceroDialog, { data: { tipo }, width: '420px' }).afterClosed().subscribe((t) => t && this.cargar()); }
+  nuevo(tipo: TipoTercero) { this.dialog.open(TerceroDialog, { data: { tipo }, width: '480px' }).afterClosed().subscribe((t) => t && this.cargar()); }
 }
 
 @Component({
@@ -133,22 +134,74 @@ export class Activos implements OnInit {
 }
 
 @Component({
-  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatSlideToggleModule],
+  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatSlideToggleModule, MatButtonModule, MatIconModule],
   template: `
     <div class="pagina">
-      <h1>Plan de cuentas (PCGE 2019)</h1>
-      <p class="muted">Se muestran las cuentas de último nivel que corresponden al perfil de la empresa. Los administradores pueden incluir las ocultas.</p>
-      <div class="fila" style="align-items:center">
-        <mat-form-field><mat-label>Buscar por código o nombre</mat-label><input matInput [(ngModel)]="q" (input)="cargar()" /></mat-form-field>
-        @if (auth.esAdmin()) { <mat-slide-toggle [(ngModel)]="todas" (change)="cargar()">Ver todas (incluye inactivas)</mat-slide-toggle> }
+      <h1>Plan de Cuentas Contable (PCGE 2019 - Elementos 1 al 0)</h1>
+      <p class="muted">Catálogo completo del Plan Contable General Empresarial. Puedes filtrar por elemento, buscar por código o nombre, editar cuentas existentes y crear nuevas cuentas.</p>
+      
+      <div class="fila" style="align-items:center; flex-wrap:wrap; gap:12px">
+        <mat-form-field style="min-width:280px">
+          <mat-label>Elemento PCGE</mat-label>
+          <mat-select [(ngModel)]="elemento" (selectionChange)="cargar()">
+            <mat-option value="">Todos los elementos (1 al 0)</mat-option>
+            <mat-option value="1">Elemento 1: Activo Disponible y Exigible</mat-option>
+            <mat-option value="2">Elemento 2: Activo Realizable</mat-option>
+            <mat-option value="3">Elemento 3: Activo Inmovilizado</mat-option>
+            <mat-option value="4">Elemento 4: Pasivo</mat-option>
+            <mat-option value="5">Elemento 5: Patrimonio Neto</mat-option>
+            <mat-option value="6">Elemento 6: Gastos por Naturaleza</mat-option>
+            <mat-option value="7">Elemento 7: Ingresos</mat-option>
+            <mat-option value="8">Elemento 8: Saldos Intermediarios de Gestión</mat-option>
+            <mat-option value="9">Elemento 9: Costos de Producción y Gastos por Función</mat-option>
+            <mat-option value="0">Elemento 0: Cuentas de Orden</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field style="min-width:240px">
+          <mat-label>Buscar por código o nombre</mat-label>
+          <input matInput [(ngModel)]="q" (input)="cargar()" placeholder="Ej. 101, 12, Mercaderías..." />
+        </mat-form-field>
+        <mat-slide-toggle [(ngModel)]="todas" (change)="cargar()">Ver todas (incluye mayores e inactivas)</mat-slide-toggle>
+        @if (auth.registra()) {
+          <button mat-stroked-button color="primary" type="button" (click)="nuevaCuenta()">
+            <mat-icon>add</mat-icon> Nueva cuenta
+          </button>
+        }
       </div>
+
       <div class="scroll"><table class="t">
-        <thead><tr><th>Código</th><th>Nombre</th><th>Naturaleza</th><th>Destino</th>@if (auth.esAdmin()) { <th>Activa</th> }</tr></thead>
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Naturaleza</th>
+            <th>Destino</th>
+            <th>Nivel</th>
+            @if (auth.esAdmin()) { <th>Activa</th> }
+            @if (auth.registra()) { <th>Acciones</th> }
+          </tr>
+        </thead>
         <tbody>
           @for (c of lista(); track c.codigo) {
-            <tr><td>{{ c.codigo }}</td><td>{{ c.nombre }}</td><td>{{ c.naturaleza === 'DEUDORA' ? 'Deudora' : 'Acreedora' }}</td><td>{{ c.requiereDestino ? 'Requiere destino' : '' }}</td>
-              @if (auth.esAdmin()) { <td><mat-slide-toggle [ngModel]="c['activa']" (ngModelChange)="activar(c, $event)" [attr.aria-label]="'Activar ' + c.codigo" /></td> }
+            <tr [style.font-weight]="c.codigo.length <= 2 ? 'bold' : 'normal'" [style.background-color]="c.codigo.length <= 2 ? '#f8fafc' : 'transparent'">
+              <td><code>{{ c.codigo }}</code></td>
+              <td>{{ c.nombre }}</td>
+              <td><span [style.color]="c.naturaleza === 'DEUDORA' ? '#0369a1' : '#b45309'">{{ c.naturaleza === 'DEUDORA' ? 'Deudora' : 'Acreedora' }}</span></td>
+              <td>{{ c.requiereDestino ? (c.destinoDefecto ? 'Destino: ' + c.destinoDefecto : 'Requiere destino') : '—' }}</td>
+              <td><small class="muted">{{ c.ultimoNivel ? 'Registro' : 'Mayor' }}</small></td>
+              @if (auth.esAdmin()) {
+                <td><mat-slide-toggle [ngModel]="c.activa" (ngModelChange)="activar(c, $event)" [attr.aria-label]="'Activar ' + c.codigo" /></td>
+              }
+              @if (auth.registra()) {
+                <td>
+                  <button mat-button color="primary" type="button" (click)="editarCuenta(c)">
+                    <mat-icon style="font-size:18px; width:18px; height:18px">edit</mat-icon> Editar
+                  </button>
+                </td>
+              }
             </tr>
+          } @empty {
+            <tr><td colspan="7" class="muted">No se encontraron cuentas para los filtros seleccionados.</td></tr>
           }
         </tbody>
       </table></div>
@@ -157,11 +210,47 @@ export class Activos implements OnInit {
 })
 export class PlanCuentas implements OnInit {
   private api = inject(Api);
+  private dialog = inject(MatDialog);
   auth = inject(Auth);
   q = '';
-  todas = false;
-  lista = signal<(Cuenta & Record<string, any>)[]>([]);
+  elemento = '';
+  todas = true;
+  lista = signal<Cuenta[]>([]);
+
   ngOnInit() { this.cargar(); }
-  cargar() { this.api.get<any[]>('/cuentas', { q: this.q, todas: this.todas ? 'true' : undefined }).subscribe((l) => this.lista.set(l)); }
-  activar(c: Cuenta, activa: boolean) { this.api.patch(`/cuentas/${c.codigo}`, { activa }).subscribe(); }
+
+  cargar() {
+    this.api.get<any[]>('/cuentas', {
+      q: this.q,
+      elemento: this.elemento || undefined,
+      todas: this.todas ? 'true' : undefined,
+    }).subscribe((l) => this.lista.set(l));
+  }
+
+  activar(c: Cuenta, activa: boolean) {
+    this.api.patch(`/cuentas/${c.codigo}`, { activa }).subscribe();
+  }
+
+  nuevaCuenta() {
+    this.dialog.open(CuentaDialog, {
+      data: { modoEdicion: false },
+      width: '460px',
+    }).afterClosed().subscribe((res) => res && this.cargar());
+  }
+
+  editarCuenta(c: any) {
+    this.dialog.open(CuentaDialog, {
+      data: {
+        codigo: c.codigo,
+        nombre: c.nombre,
+        naturaleza: c.naturaleza,
+        requiereDestino: c.requiereDestino,
+        destinoDefecto: c.destinoDefecto,
+        activa: c.activa,
+        ultimoNivel: c.ultimoNivel,
+        modoEdicion: true,
+      },
+      width: '460px',
+    }).afterClosed().subscribe((res) => res && this.cargar());
+  }
 }

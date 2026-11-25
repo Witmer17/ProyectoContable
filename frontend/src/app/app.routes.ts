@@ -10,6 +10,8 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', loadComponent: () => import('./pages/inicio').then((m) => m.Inicio) },
       { path: 'configuracion', loadComponent: () => import('./pages/configuracion').then((m) => m.Configuracion), canActivate: [rolGuard()] },
+      { path: 'compras', loadComponent: () => import('./pages/registro-compras').then((m) => m.RegistroComprasComponent), canActivate: [rolGuard('CONTADOR', 'AUXILIAR')] },
+      { path: 'ventas', loadComponent: () => import('./pages/registro-ventas').then((m) => m.RegistroVentasComponent), canActivate: [rolGuard('CONTADOR', 'AUXILIAR')] },
       { path: 'registrar', loadComponent: () => import('./pages/asistente').then((m) => m.Asistente), canActivate: [rolGuard('CONTADOR', 'AUXILIAR')] },
       { path: 'asientos', loadComponent: () => import('./pages/asientos').then((m) => m.Asientos) },
       { path: 'pendientes', loadComponent: () => import('./pages/pendientes').then((m) => m.Pendientes) },
