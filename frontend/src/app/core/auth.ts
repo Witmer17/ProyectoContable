@@ -1,5 +1,5 @@
 import { HttpInterceptorFn } from '@angular/common/http';
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { of } from 'rxjs';
 
 export type Rol = 'ADMINISTRADOR' | 'CONTADOR' | 'AUXILIAR' | 'LECTURA';
@@ -12,10 +12,13 @@ const USUARIO_DEFECTO: Usuario = {
   rol: 'ADMINISTRADOR',
 };
 
+// Token activo de sesión directa
+const TOKEN_DIRECTO = 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwidXNlcklkIjoxLCJlbWFpbCI6ImFkbWluQGRlbW8ucGUiLCJyb2wiOiJBRE1JTklTVFJBRE9SIiwiaWF0IjoxNzk1NjI4MjAxLCJleHAiOjE3OTYyMzMwMDF9.fXu2Ybq20xYemcRnxKpghUy2aHZYYxft4QUj0RLJR_hIorlDVC9KBKvG5ZNENhr7ozmAwfCJwfbTqaTRzB2utw';
+
 @Injectable({ providedIn: 'root' })
 export class Auth {
   readonly usuario = signal<Usuario | null>(USUARIO_DEFECTO);
-  token: string | null = 'sin-login';
+  token: string | null = TOKEN_DIRECTO;
   readonly rol = computed(() => 'ADMINISTRADOR');
   readonly esAdmin = computed(() => true);
   readonly contable = computed(() => true);
@@ -26,14 +29,17 @@ export class Auth {
   }
 
   login(email?: string, password?: string) {
-    return of({ token: 'sin-login', usuario: USUARIO_DEFECTO });
+    return of({ token: TOKEN_DIRECTO, usuario: USUARIO_DEFECTO });
   }
 
   logout() {
-    // Modo sin login activo
+    // Sin login: permanece en el sistema como Administrador
   }
 }
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  return next(req);
+  const auth = inject(Auth);
+  const token = auth.token || TOKEN_DIRECTO;
+  const r = req.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
+  return next(r);
 };
