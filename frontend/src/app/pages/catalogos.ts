@@ -35,7 +35,8 @@ import { CuentaDialog } from '../shared/cuenta-dialog';
           @for (t of nuevos(); track t.v) { <button mat-stroked-button type="button" (click)="nuevo(t.v)"><mat-icon>add</mat-icon> {{ t.t }}</button> }
         </div>
       }
-      <div class="scroll"><table class="t">
+      <div class="scroll" style="box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08); border-radius: 4px; overflow: hidden; margin-top: 14px">
+        <table class="t tabla-cuadricula">
         <thead><tr><th>Tipo</th><th>Documento</th><th>Nombre</th><th>Dirección</th></tr></thead>
         <tbody>@for (t of lista(); track t.id) { <tr><td>{{ t.tipo }}</td><td>{{ t.tipoDoc }} {{ t.documento }}</td><td>{{ t.nombre }}</td><td>{{ t.direccion }}</td></tr> } @empty { <tr><td colspan="4" class="muted">Sin registros.</td></tr> }</tbody>
       </table></div>
@@ -76,7 +77,8 @@ export class Terceros implements OnInit {
       </table></div>
       @if (kardex(); as k) {
         <h2>Kárdex de {{ k.producto.nombre }}</h2>
-        <div class="scroll"><table class="t">
+        <div class="scroll" style="box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08); border-radius: 4px; overflow: hidden; margin-top: 14px">
+        <table class="t tabla-cuadricula">
           <thead><tr><th>Fecha</th><th>Movimiento</th><th class="num">Cantidad</th><th class="num">Costo unit.</th><th class="num">Costo total</th><th class="num">Saldo cant.</th><th class="num">Saldo S/</th></tr></thead>
           <tbody>@for (m of k.movimientos; track $index) { <tr><td>{{ m.fecha }}</td><td>{{ m.tipo === 'ENTRADA' ? 'Entrada' : 'Salida' }}</td><td class="num">{{ m.cantidad }}</td><td class="num">{{ soles(m.costoUnit) }}</td><td class="num">{{ soles(m.costoTotal) }}</td><td class="num">{{ m.saldoCant }}</td><td class="num">{{ soles(m.saldoCosto) }}</td></tr> }</tbody>
         </table></div>
@@ -103,7 +105,8 @@ export class Productos implements OnInit {
     <div class="pagina">
       <h1>Activos fijos</h1>
       <p class="muted">Los bienes comprados desde "Compré un activo" se dan de alta solos. La depreciación mensual se calcula en "Depreciación del mes".</p>
-      <div class="scroll"><table class="t">
+      <div class="scroll" style="box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08); border-radius: 4px; overflow: hidden; margin-top: 14px">
+        <table class="t tabla-cuadricula">
         <thead><tr><th>Bien</th><th>Cuenta</th><th>Compra</th><th class="num">Valor</th><th class="num">Tasa anual</th><th class="num">Depreciado</th><th>Estado</th></tr></thead>
         <tbody>@for (a of lista(); track a.id) { <tr><td>{{ a.nombre }}</td><td>{{ a.cuenta }}</td><td>{{ a.fechaCompra }}</td><td class="num">{{ soles(a.valor) }}</td><td class="num">{{ a.tasaAnual * 100 }} %</td><td class="num">{{ soles(a.depreciado) }}</td><td>{{ a.estado }}</td></tr> } @empty { <tr><td colspan="7" class="muted">Sin activos.</td></tr> }</tbody>
       </table></div>
@@ -169,7 +172,8 @@ export class Activos implements OnInit {
         }
       </div>
 
-      <div class="scroll"><table class="t">
+      <div class="scroll" style="box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08); border-radius: 4px; overflow: hidden; margin-top: 14px">
+        <table class="t tabla-cuadricula">
         <thead>
           <tr>
             <th>Código</th>
