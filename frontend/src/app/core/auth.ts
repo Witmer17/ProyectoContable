@@ -1,52 +1,39 @@
 import { HttpInterceptorFn } from '@angular/common/http';
-import { Injectable, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
-import { tap } from 'rxjs';
-import { Api } from './api';
+import { Injectable, computed, signal } from '@angular/core';
+import { of } from 'rxjs';
 
 export type Rol = 'ADMINISTRADOR' | 'CONTADOR' | 'AUXILIAR' | 'LECTURA';
 export interface Usuario { id: number; nombre: string; email: string; rol: Rol }
 
-const CLAVE = 'sc_sesion';
+const USUARIO_DEFECTO: Usuario = {
+  id: 1,
+  nombre: 'Administrador',
+  email: 'admin@demo.pe',
+  rol: 'ADMINISTRADOR',
+};
 
 @Injectable({ providedIn: 'root' })
 export class Auth {
-  private api = inject(Api);
-  private router = inject(Router);
-  readonly usuario = signal<Usuario | null>(null);
-  token: string | null = null;
-  readonly rol = computed(() => this.usuario()?.rol);
-  readonly esAdmin = computed(() => this.rol() === 'ADMINISTRADOR');
-  readonly contable = computed(() => this.rol() === 'ADMINISTRADOR' || this.rol() === 'CONTADOR');
-  readonly registra = computed(() => this.contable() || this.rol() === 'AUXILIAR');
+  readonly usuario = signal<Usuario | null>(USUARIO_DEFECTO);
+  token: string | null = 'sin-login';
+  readonly rol = computed(() => 'ADMINISTRADOR');
+  readonly esAdmin = computed(() => true);
+  readonly contable = computed(() => true);
+  readonly registra = computed(() => true);
 
   constructor() {
-    try {
-      const s = JSON.parse(sessionStorage.getItem(CLAVE) ?? 'null');
-      if (s) { this.token = s.token; this.usuario.set(s.usuario); }
-    } catch { /* sin sesión previa */ }
+    this.usuario.set(USUARIO_DEFECTO);
   }
 
-  login(email: string, password: string) {
-    return this.api.post<{ token: string; usuario: Usuario }>('/auth/login', { email, password }).pipe(
-      tap((r) => {
-        this.token = r.token;
-        this.usuario.set(r.usuario);
-        try { sessionStorage.setItem(CLAVE, JSON.stringify(r)); } catch { /* almacenamiento no disponible */ }
-      }),
-    );
+  login(email?: string, password?: string) {
+    return of({ token: 'sin-login', usuario: USUARIO_DEFECTO });
   }
 
   logout() {
-    this.token = null;
-    this.usuario.set(null);
-    try { sessionStorage.removeItem(CLAVE); } catch { /* ignorar */ }
-    this.router.navigate(['/login']);
+    // Modo sin login activo
   }
 }
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const auth = inject(Auth);
-  const r = auth.token ? req.clone({ setHeaders: { Authorization: `Bearer ${auth.token}` } }) : req;
-  return next(r).pipe(tap({ error: (e) => { if (e.status === 401 && !req.url.endsWith('/auth/login') && !req.url.includes('/periodos/')) auth.logout(); } }));
+  return next(req);
 };

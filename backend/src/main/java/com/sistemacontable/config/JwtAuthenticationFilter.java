@@ -47,6 +47,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
+        // Si no hay token provisto, establecer usuario 1 (Administrador) por defecto
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            UsernamePasswordAuthenticationToken defaultAuth = new UsernamePasswordAuthenticationToken(
+                    1,
+                    null,
+                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMINISTRADOR"))
+            );
+            SecurityContextHolder.getContext().setAuthentication(defaultAuth);
+        }
+
         filterChain.doFilter(request, response);
     }
 }

@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, OnInit, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -69,10 +69,6 @@ interface Item { ruta: string; texto: string; icono: string; visible: boolean }
                 <span class="user-role">{{ auth.rol() }}</span>
               </div>
             </div>
-
-            <button mat-icon-button (click)="auth.logout()" aria-label="Cerrar sesión" title="Cerrar sesión" class="btn-logout">
-              <mat-icon>logout</mat-icon>
-            </button>
           </mat-toolbar>
 
           <main class="main-content">
@@ -313,10 +309,16 @@ interface Item { ruta: string; texto: string; icono: string; visible: boolean }
     }
   `],
 })
-export class App {
+export class App implements OnInit {
   auth = inject(Auth);
   store = inject(EmpresaStore);
   movil = toSignal(inject(BreakpointObserver).observe('(max-width: 900px)').pipe(map((r) => r.matches)), { initialValue: false });
+
+  ngOnInit() {
+    if (!this.store.cargada()) {
+      this.store.cargar();
+    }
+  }
 
   items = computed<Item[]>(() => {
     const m = this.store.modulos();
